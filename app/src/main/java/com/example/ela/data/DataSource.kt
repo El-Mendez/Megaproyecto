@@ -1,8 +1,8 @@
-package com.example.prototype.data
+package com.example.ela.data
 
-import com.example.prototype.R
-import com.example.prototype.model.AppBlock
-import com.example.prototype.model.InternetBlock
+import com.example.ela.R
+import com.example.ela.model.AppBlock
+import com.example.ela.model.InternetBlock
 
 class DataSource {
     fun loadAppBlocks(): List<AppBlock> {

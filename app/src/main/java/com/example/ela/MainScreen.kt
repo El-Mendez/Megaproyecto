@@ -1,8 +1,6 @@
-package com.example.prototype
+package com.example.ela
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,15 +15,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.prototype.data.DataSource
-import com.example.prototype.model.AppBlock
-import com.example.prototype.model.InternetBlock
-import com.example.prototype.ui.theme.PrototypeTheme
-import com.example.prototype.ui.theme.Shapes
+import com.example.ela.data.DataSource
+import com.example.ela.model.AppBlock
+import com.example.ela.model.InternetBlock
+import com.example.ela.ui.theme.ElaTheme
 
 @Composable
 fun MainScreen() {
-    PrototypeTheme {
+    ElaTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
         ) {

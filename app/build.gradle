@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.prototype'
+    namespace 'com.example.ela'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.example.prototype"
+        applicationId "com.example.ela"
         minSdk 24
         targetSdk 33
         versionCode 1

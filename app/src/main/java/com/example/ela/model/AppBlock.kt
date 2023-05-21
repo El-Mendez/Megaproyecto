@@ -1,4 +1,4 @@
-package com.example.prototype.model
+package com.example.ela.model
 
 import androidx.annotation.DrawableRes
 

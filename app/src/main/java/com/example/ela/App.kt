@@ -1,11 +1,11 @@
-package com.example.prototype
+package com.example.ela
 
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import com.example.prototype.services.NotificationService
+import com.example.ela.services.NotificationService
 
 class App: Application() {
     override fun onCreate() {

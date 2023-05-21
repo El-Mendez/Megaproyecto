@@ -1,12 +1,12 @@
-package com.example.prototype.services
+package com.example.ela.services
 
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
-import com.example.prototype.MainActivity
-import com.example.prototype.R
+import com.example.ela.MainActivity
+import com.example.ela.R
 
 class NotificationService(
     private val context: Context

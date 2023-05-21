@@ -1,4 +1,4 @@
-package com.example.prototype.model
+package com.example.ela.model
 
 data class InternetBlock(
     val time: String,

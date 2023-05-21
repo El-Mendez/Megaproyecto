@@ -1,7 +1,9 @@
 package com.example.prototype
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,9 +28,11 @@ fun MainScreen() {
     PrototypeTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colors.background
         ) {
-            AppBlockList(appBlockList = DataSource().loadAppBlocks())
+            Column {
+                Text(text = "Hola Mundo", style = MaterialTheme.typography.h1)
+                AppBlockList(appBlockList = DataSource().loadAppBlocks())
+            }
         }
     }
 }

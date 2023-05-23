@@ -29,8 +29,7 @@ class NotificationService(
 
         val notification = NotificationCompat.Builder(context, COUNTER_CHANNEL_ID)
             .setSmallIcon(R.drawable.baseline_warning_24)
-            .setContentTitle("¡Dominio bloqueado!")
-            .setContentText("Se bloquearon $amount comunicaciones sospechosas de la aplicación $application")
+            .setContentTitle("Ela está corriendo")
             .setContentIntent(activityPendingIntent)
             .build()
 

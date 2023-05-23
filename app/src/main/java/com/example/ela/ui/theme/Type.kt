@@ -19,6 +19,11 @@ val Typography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
     ),
+    h2 = TextStyle(
+        fontFamily = NunitoFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 24.sp,
+    ),
     body1 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,

@@ -30,7 +30,7 @@ class ChatApiImpl(
             getNewChatMessage(reqBody).choices.map {
                 MessageData(
                     content = it.message.content,
-                    userCreated = it.message.role == "assistant"
+                    userCreated = it.message.role != "assistant"
                 )
             }
         } catch (e: ClientRequestException) {
@@ -40,11 +40,16 @@ class ChatApiImpl(
     }
 
     private suspend fun getNewChatMessage(chat: List<ChatMessage>): ChatResponse {
+        val request = ChatRequest(
+            model = "gpt-3.5-turbo",
+            messages = chat,
+            temperature = 0.7f,
+        )
         return client.post {
             url(GPTRoutes.CHAT)
             contentType(ContentType.Application.Json)
-            setBody(chat)
-            bearerAuth("") // TODO
+            setBody(request)
         }.body()
     }
 }
+

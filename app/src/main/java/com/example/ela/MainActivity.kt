@@ -6,12 +6,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.example.ela.model.AppBlock
+import com.example.ela.remote.ChatApi
 import com.example.ela.services.NotificationService
 import com.example.ela.ui.theme.ElaTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var notificationService: NotificationService
-
+    private val chatApi = ChatApi.create()
     override fun onCreate(savedInstanceState: Bundle?) {
 //        val apps = applicationContext.packageManager.getInstalledApplications(0)
 //        val appBlocks = mutableListOf<AppBlock>()
@@ -31,7 +32,7 @@ class MainActivity : ComponentActivity() {
         notificationService = NotificationService(applicationContext)
         setContent {
             ElaTheme {
-                ChatScreen()
+                ChatScreen(chatApi = chatApi)
 //                MainScreen(appBlocks)
             }
         }

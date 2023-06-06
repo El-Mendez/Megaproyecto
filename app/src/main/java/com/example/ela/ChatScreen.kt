@@ -39,12 +39,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.ela.data.MessageData
 import kotlinx.coroutines.launch
-
-data class MessageData(
-    val content: String,
-    val userCreated: Boolean,
-)
 
 @Composable
 @Preview

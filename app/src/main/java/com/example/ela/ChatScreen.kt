@@ -1,5 +1,6 @@
 package com.example.ela
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,30 +41,32 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.ela.data.MessageData
+import com.example.ela.remote.ChatApi
 import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.GlobalScope
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-@Preview
-fun ChatScreen() {
+//@Preview
+fun ChatScreen(chatApi: ChatApi) {
     val messages = remember {
-        mutableStateListOf(
-            MessageData("Hola", true),
-            MessageData("Mundo", true),
-            MessageData("Hola", false),
-            MessageData("Hola", true),
-            MessageData("Mundo", true),
-            MessageData("Hola", false),
-            MessageData("Hola", true),
-            MessageData("Mundo", true),
-            MessageData("Hola", false),
-            MessageData("Hola", true),
-            MessageData("Mundo", true),
-            MessageData("Hola", true),
-            MessageData("Mundo", true),
-            MessageData("Hola", false),
-            MessageData("Hola", false),
+        mutableStateListOf<MessageData>(
+            MessageData("hello ella", true)
         )
     }
+
+    fun askForResponse() {
+        GlobalScope.launch {
+            if (messages.isEmpty()) return@launch
+
+            val res = chatApi.getResponse(messages)
+            println(" --- - -- - - $res")
+            messages.addAll(chatApi.getResponse(res))
+            println("ADDED MESSAGES")
+        }
+    }
+
 
     Scaffold(
         topBar = {
@@ -78,12 +81,8 @@ fun ChatScreen() {
         bottomBar = {
             InputBar(
                 onSubmit = {
-                    messages.add(
-                        MessageData(
-                            it,
-                            true,
-                    ))
-                    println("SUBMITTED $it")
+                    messages.add(MessageData(it, true))
+                    askForResponse()
                 }
             )
         }
@@ -100,7 +99,7 @@ fun Messages(messages: List<MessageData>, modifier: Modifier) {
         modifier = modifier,
     ) {
         coroutine.launch {
-            lazyListState.scrollToItem(messages.size - 1)
+            lazyListState.scrollToItem(maxOf(messages.size - 1, 0))
         }
 
         items(messages) {message ->
@@ -167,7 +166,7 @@ fun TopBar() {
 
 @Composable
 fun InputBar (onSubmit: (String) -> Unit) {
-    val text = remember { mutableStateOf("a") }
+    val text = remember { mutableStateOf("") }
 
     Row(
         modifier = Modifier

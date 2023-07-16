@@ -1,149 +1,258 @@
 package com.example.ela
 
-import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import android.util.Log
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-//import androidx.compose.foundation.lazy.grid.LazyGridItemScopeImpl.animateItemPlacement
-import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.ela.data.MessageData
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ela.remote.ChatApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.GlobalScope
+import java.text.DateFormat
+import java.util.*
 
-@SuppressLint("CoroutineCreationDuringComposition")
-@Composable
-//@Preview
-fun ChatScreen(chatApi: ChatApi) {
-    val messages = remember {
-        mutableStateListOf<MessageData>(
-            MessageData("hello ella", true)
+class ChatViewMode : ViewModel() {
+    val messages: SnapshotStateList<MessageData> = mutableStateListOf()
+    val calculatingResponse = mutableStateOf(false)
+
+    fun sendMessage(content: String, api: ChatApi) {
+        messages.add(
+            MessageData(
+                content,
+                userCreated = true,
+                date = Date()
+            )
         )
-    }
 
-    fun askForResponse() {
-        GlobalScope.launch {
-            if (messages.isEmpty()) return@launch
-
-            val res = chatApi.getResponse(messages)
-            println(" --- - -- - - $res")
-            messages.addAll(chatApi.getResponse(res))
-            println("ADDED MESSAGES")
+        viewModelScope.launch {
+            calculatingResponse.value = true
+            try {
+                val res = api.getResponse(messages)
+                messages.addAll(res)
+            } catch (e: Exception) {
+                messages.add(
+                    MessageData(
+                        "Vaya, parece que no tienes conexión a internet",
+                        false,
+                        Date(),
+                    )
+                )
+            }
+            calculatingResponse.value = false
         }
+        Log.d("ChatScreen", "sending message :$content")
     }
+}
 
+@Composable
+fun ChatScreen(chatApi: ChatApi) {
+    val viewModel = viewModel<ChatViewMode>()
 
+    Chat(
+        viewModel.messages,
+        viewModel.calculatingResponse.value,
+        onSubmit = fun(content: String) { viewModel.sendMessage(content, chatApi) },
+    )
+}
+
+@Composable
+fun Chat(messages: List<MessageData>, calculatingResponse: Boolean, onSubmit: (String) -> Unit) {
     Scaffold(
         topBar = {
             TopBar()
         },
         content = {
-            Messages(
+            MessageList(
                 messages = messages,
+                writingBubble = calculatingResponse,
                 modifier = Modifier.padding(it),
             )
         },
         bottomBar = {
             InputBar(
-                onSubmit = {
-                    messages.add(MessageData(it, true))
-                    askForResponse()
-                }
+                onSubmit = onSubmit,
+                submitEnabled = !calculatingResponse,
             )
         }
     )
 }
 
 @Composable
-fun Messages(messages: List<MessageData>, modifier: Modifier) {
+fun MessageList(messages: List<MessageData>, writingBubble: Boolean, modifier: Modifier) {
     val lazyListState = rememberLazyListState()
-    val coroutine = rememberCoroutineScope()
 
-    LazyColumn(
-        state = lazyListState,
-        modifier = modifier,
-    ) {
-        coroutine.launch {
-            lazyListState.scrollToItem(maxOf(messages.size - 1, 0))
-        }
+    LaunchedEffect(messages, writingBubble) {
+        lazyListState.scrollToItem(maxOf(messages.size - 1, 0))
+    }
 
-        items(messages) {message ->
-            Message(content = message)
+    Box(modifier) {
+        LazyColumn(
+            state = lazyListState,
+            verticalArrangement = Arrangement.Bottom,
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            items(messages) { message ->
+                MessageBubble(content = message)
+            }
+            if (writingBubble) {
+                item {
+                    WrittingBubble()
+                }
+            }
         }
     }
 }
 
 @Composable
-fun Message(content: MessageData) {
+fun MessageBubble(content: MessageData) {
+    var showDetails by remember { mutableStateOf(false) }
+    val alignment: Alignment
+    val backgroundColor: Color
+    val fontColor: Color
+
+    val date by remember {
+        derivedStateOf {
+            val dateFormatter: DateFormat = DateFormat.getTimeInstance(DateFormat.SHORT)
+            dateFormatter.format(content.date)
+        }
+    }
+
     if (content.userCreated) {
-        Box(
-            contentAlignment = Alignment.CenterEnd,
+        alignment = Alignment.CenterEnd
+        backgroundColor = MaterialTheme.colors.secondary
+        fontColor = MaterialTheme.colors.onSecondary
+    } else {
+        alignment = Alignment.CenterStart
+        backgroundColor = MaterialTheme.colors.primary
+        fontColor = MaterialTheme.colors.onPrimary
+    }
+
+    Box(
+        contentAlignment = alignment,
+        modifier = Modifier
+            .fillMaxWidth(),
+    ) {
+        Surface(
+            color = backgroundColor,
+            shape = RoundedCornerShape(8.dp),
+            elevation = 5.dp,
             modifier = Modifier
-                .fillMaxWidth(),
+                .padding(vertical = 5.dp, horizontal = 16.dp)
+                .clickable { showDetails = !showDetails },
         ) {
-            Surface(
-                color = MaterialTheme.colors.secondary,
-                shape = RoundedCornerShape(8.dp),
-                elevation = 5.dp,
-                modifier = Modifier
-                    .padding(vertical = 5.dp, horizontal = 16.dp),
-            ) {
+            Column {
                 Text(
                     text = content.content,
-                    style = MaterialTheme.typography.body1,
+                    style = MaterialTheme.typography.body1.plus(TextStyle(color = fontColor)),
                     modifier = Modifier
                         .padding(6.dp)
                 )
+
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = showDetails
+                ) {
+                    Text(
+                        text = date,
+                        style = MaterialTheme.typography.caption,
+                    )
+                }
             }
         }
-    } else {
-        Surface(
-            color = MaterialTheme.colors.primary,
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier
-                .padding(vertical = 5.dp, horizontal = 16.dp),
-            elevation = 5.dp,
+    }
+}
+
+
+@Preview
+@Composable
+fun WrittingBubble() {
+    val offset1 = remember { Animatable(0f) }
+    val offset2 = remember { Animatable(0f) }
+    val offset3 = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        offset1.animateTo(
+            targetValue = -5f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1000, 500),
+                repeatMode = RepeatMode.Reverse,
+            )
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        delay(200)
+        offset2.animateTo(
+            targetValue = -5f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1000, 500),
+                repeatMode = RepeatMode.Reverse,
+            )
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        delay(400)
+        offset3.animateTo(
+            targetValue = -5f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1000, 500),
+                repeatMode = RepeatMode.Reverse,
+            )
+        )
+    }
+
+    Surface(
+        color = MaterialTheme.colors.primary,
+        shape = RoundedCornerShape(8.dp),
+        elevation = 5.dp,
+        modifier = Modifier
+            .height(40.dp)
+            .padding(vertical = 5.dp, horizontal = 22.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp).offset(y = 5.dp)
         ) {
             Text(
-                text = content.content,
-                style = MaterialTheme.typography.body1,
-                modifier = Modifier
-                    .padding(6.dp)
+                text = "⬤",
+                style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
+                modifier = Modifier.offset(y = offset1.value.dp)
+            )
+            Text(
+                text = "⬤",
+                style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
+                modifier = Modifier.offset(y = offset2.value.dp)
+            )
+            Text(
+                text = "⬤",
+                style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
+                modifier = Modifier.offset(y = offset3.value.dp)
             )
         }
     }
@@ -165,8 +274,16 @@ fun TopBar() {
 }
 
 @Composable
-fun InputBar (onSubmit: (String) -> Unit) {
-    val text = remember { mutableStateOf("") }
+fun InputBar(onSubmit: (String) -> Unit, submitEnabled: Boolean) {
+    var text by remember { mutableStateOf("") }
+    val isNotEmpty by remember { derivedStateOf { text.isNotBlank() } }
+
+    fun sendMessage() {
+        if (isNotEmpty && submitEnabled) {
+            onSubmit(text)
+            text = ""
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -174,15 +291,16 @@ fun InputBar (onSubmit: (String) -> Unit) {
             .height(intrinsicSize = IntrinsicSize.Max)
     ) {
         TextField(
-            value = text.value,
+            singleLine = true,
+            keyboardActions = KeyboardActions(
+                onDone = { sendMessage() }
+            ),
+            value = text,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
             onValueChange = {
-                if (it.isNotBlank())
-                    text.value = it
-                else
-                    text.value = ""
+                text = it.ifBlank { "" }
             },
             placeholder = {
                 Text(text = "Escribe tus dudas de ciberseguridad...")
@@ -201,11 +319,8 @@ fun InputBar (onSubmit: (String) -> Unit) {
                     .height(56.dp),
             ) {
                 Button(
-                    enabled = text.value.isNotBlank(),
-                    onClick = {
-                        onSubmit(text.value)
-                        text.value = ""
-                    },
+                    enabled = isNotEmpty && submitEnabled,
+                    onClick = { sendMessage() },
                     modifier = Modifier.size(56.dp),
                     elevation = ButtonDefaults.elevation(0.dp),
                     colors = ButtonDefaults
@@ -216,7 +331,7 @@ fun InputBar (onSubmit: (String) -> Unit) {
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     androidx.compose.animation.AnimatedVisibility(
-                        visible = text.value.isNotBlank(),
+                        visible = isNotEmpty,
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.round_send_24),

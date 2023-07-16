@@ -1,5 +1,6 @@
 package com.example.ela.remote.dto
 
+import com.example.ela.BuildConfig
 import com.example.ela.data.MessageData
 import com.example.ela.remote.ChatApi
 import com.example.ela.remote.GPTRoutes
@@ -14,14 +15,15 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import java.util.*
 
 class ChatApiImpl(
     private val client: HttpClient
-): ChatApi {
+) : ChatApi {
     override suspend fun getResponse(chat: List<MessageData>): List<MessageData> {
         val reqBody = chat.map {
             ChatMessage(
-                if (it.userCreated) "user" else  "assistant",
+                if (it.userCreated) "user" else "assistant",
                 it.content,
             )
         }
@@ -30,7 +32,8 @@ class ChatApiImpl(
             getNewChatMessage(reqBody).choices.map {
                 MessageData(
                     content = it.message.content,
-                    userCreated = it.message.role != "assistant"
+                    userCreated = it.message.role != "assistant",
+                    date = Date()
                 )
             }
         } catch (e: ClientRequestException) {
@@ -48,6 +51,7 @@ class ChatApiImpl(
         return client.post {
             url(GPTRoutes.CHAT)
             contentType(ContentType.Application.Json)
+            bearerAuth(BuildConfig.GPT_API_KEY)
             setBody(request)
         }.body()
     }

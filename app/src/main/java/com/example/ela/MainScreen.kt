@@ -1,62 +1,43 @@
 package com.example.ela
 
-import android.graphics.drawable.Drawable
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.ela.model.AppBlock
-import com.example.ela.ui.theme.ElaTheme
 
 @Composable
-@Preview
-fun MainScreen() {
-    var showMenu by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
-
-    Column {
-        TopButtons({}, {})
+fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colors.background)
+    ) {
+        TopButtons(onSend, onSettings)
         Box(
             modifier = Modifier
-                .fillMaxWidth()
                 .height(180.dp)
-                .horizontalScroll(scrollState),
+                .fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 "Ela",
-                style = MaterialTheme.typography.h1
+                style = MaterialTheme.typography.h1.copy(color = MaterialTheme.colors.onBackground)
             )
         }
 
-        DailyTip("Cuidado con el Phishing", {})
+        DailyTip("Cuidado con el Phishing", onSend)
 
-        DailyBlocksCard()
+        DailyBlocksCard(onDetails)
     }
 }
 
@@ -79,7 +60,11 @@ fun TopButtons(onSendAction: () -> Unit, onSettingsActions: () -> Unit) {
         }
         Box {
             IconButton(onClick = { showMenu = !showMenu }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "más opciones")
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = "más opciones",
+                    tint = MaterialTheme.colors.onBackground
+                )
             }
             DropdownMenu(
                 expanded = showMenu,
@@ -103,7 +88,7 @@ fun DailyTip(content: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(10.dp)
             .clickable {
-
+                onClick()
             },
         elevation = 5.dp,
     ) {
@@ -121,7 +106,7 @@ fun DailyTip(content: String, onClick: () -> Unit) {
                 textAlign = TextAlign.Center
             )
             Text(
-                "Cuidado con el Phishing",
+                text = content,
                 style = MaterialTheme.typography.h2.copy(color = MaterialTheme.colors.onPrimary),
                 textAlign = TextAlign.Center
             )
@@ -170,7 +155,7 @@ fun CardWithTitle(
 }
 
 @Composable
-fun DailyBlocksCard() {
+fun DailyBlocksCard(onClick: () -> Unit) {
     CardWithTitle(
         top = {
             Column {
@@ -181,7 +166,7 @@ fun DailyBlocksCard() {
                 Text(text = "tráfico sospechoso bloqueado hoy.", style = MaterialTheme.typography.caption)
             }
         },
-        onClick = {},
+        onClick = onClick,
         content = {
             Column(
                 modifier = Modifier

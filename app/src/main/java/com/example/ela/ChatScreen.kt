@@ -9,15 +9,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TopAppBar
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -30,14 +24,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ela.model.MessageData
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ela.remote.ChatApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.*
 
-class ChatViewMode : ViewModel() {
+class ChatViewModel : ViewModel() {
     val messages: SnapshotStateList<MessageData> = mutableStateListOf()
     val calculatingResponse = mutableStateOf(false)
 
@@ -71,21 +64,15 @@ class ChatViewMode : ViewModel() {
 }
 
 @Composable
-fun ChatScreen(chatApi: ChatApi) {
-    val viewModel = viewModel<ChatViewMode>()
-
-    Chat(
-        viewModel.messages,
-        viewModel.calculatingResponse.value,
-        onSubmit = fun(content: String) { viewModel.sendMessage(content, chatApi) },
-    )
-}
-
-@Composable
-fun Chat(messages: List<MessageData>, calculatingResponse: Boolean, onSubmit: (String) -> Unit) {
+fun ChatScreen(
+    messages: List<MessageData>,
+    calculatingResponse: Boolean,
+    onSubmit: (String) -> Unit,
+    onReturn: (() -> Unit)?,
+) {
     Scaffold(
         topBar = {
-            ChatTopBar()
+            ChatTopBar(onReturn)
         },
         content = {
             MessageList(
@@ -259,7 +246,7 @@ fun WrittingBubble() {
 }
 
 @Composable
-fun ChatTopBar() {
+fun ChatTopBar(onReturn: (() -> Unit)?) {
     TopAppBar(
         title = {
             Text(
@@ -269,7 +256,13 @@ fun ChatTopBar() {
         },
         elevation = 12.dp,
         actions = {},
-        navigationIcon = {}
+        navigationIcon = {
+            if (onReturn == null) return@TopAppBar
+
+            IconButton(onClick = onReturn) {
+                Icon(Icons.Filled.ArrowBack, "backIcon")
+            }
+        }
     )
 }
 

@@ -1,6 +1,6 @@
 package com.example.ela.remote
 
-import com.example.ela.data.MessageData
+import com.example.ela.model.MessageData
 import com.example.ela.remote.dto.ChatApiImpl
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android

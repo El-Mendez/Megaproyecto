@@ -1,7 +1,7 @@
 package com.example.ela.remote.dto
 
 import com.example.ela.BuildConfig
-import com.example.ela.data.MessageData
+import com.example.ela.model.MessageData
 import com.example.ela.remote.ChatApi
 import com.example.ela.remote.GPTRoutes
 

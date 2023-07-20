@@ -1,4 +1,4 @@
-package com.example.ela.data
+package com.example.ela.model
 
 import java.util.Date
 

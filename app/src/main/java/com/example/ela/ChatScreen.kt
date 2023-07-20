@@ -29,7 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ela.data.MessageData
+import com.example.ela.model.MessageData
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ela.remote.ChatApi
 import kotlinx.coroutines.delay
@@ -85,7 +85,7 @@ fun ChatScreen(chatApi: ChatApi) {
 fun Chat(messages: List<MessageData>, calculatingResponse: Boolean, onSubmit: (String) -> Unit) {
     Scaffold(
         topBar = {
-            TopBar()
+            ChatTopBar()
         },
         content = {
             MessageList(
@@ -259,7 +259,7 @@ fun WrittingBubble() {
 }
 
 @Composable
-fun TopBar() {
+fun ChatTopBar() {
     TopAppBar(
         title = {
             Text(

@@ -32,8 +32,8 @@ class MainActivity : ComponentActivity() {
         notificationService = NotificationService(applicationContext)
         setContent {
             ElaTheme {
-                ChatScreen(chatApi = chatApi)
-//                MainScreen(appBlocks)
+//                ChatScreen(chatApi = chatApi)
+                MainScreen()
             }
         }
     }

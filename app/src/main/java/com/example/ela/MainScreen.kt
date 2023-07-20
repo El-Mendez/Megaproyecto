@@ -1,26 +1,18 @@
 package com.example.ela
 
 import android.graphics.drawable.Drawable
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,139 +20,192 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.ela.model.AppBlock
 import com.example.ela.ui.theme.ElaTheme
 
 @Composable
-fun MainScreen(appBlockList: List<AppBlock>) {
-    val isOpen = remember { mutableStateOf(true) }
-    ElaTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
+@Preview
+fun MainScreen() {
+    var showMenu by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
+    Column {
+        TopButtons({}, {})
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .horizontalScroll(scrollState),
+            contentAlignment = Alignment.Center,
         ) {
-            Column {
-                Text(text = "Ela", style = MaterialTheme.typography.h1)
-                AppBlockList(appBlockList)
-            }
-            if (isOpen.value) {
-                AlertDialog(
-                    onDismissRequest = { },
-                    title = {
-                        Text(
-                            text = "¡Cuidado con el phishing!",
-                            style = MaterialTheme.typography.h2,
-                        )
-                    },
-                    text = {
-                        Text(
-                            text = "Antes de entrar a cualquier link, asegúrate de que el enlace apunta a un sitio web legítimo y confiable",
-                            style = MaterialTheme.typography.body1,
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { isOpen.value = false }) {
-                            Text(text = "Ok")
-                        }
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AppBlockList(appBlockList: List<AppBlock>) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        items(appBlockList) {appBlock ->
-            AppBlockCard(
-                appBlock,
-                modifier = Modifier
-                    .padding(bottom = 6.dp)
-            )
-            Divider(
-                color = Color.LightGray,
-                startIndent = 120.dp,
-                thickness = 1.dp,
-            )
-        }
-    }
-}
-
-@Composable
-fun AppBlockCard(appBlock: AppBlock, modifier: Modifier = Modifier.fillMaxWidth(1f)) {
-    Surface(
-        modifier = modifier
-    ) {
-        Row {
-            Spacer(
-                modifier = Modifier
-                    .width(115.dp)
-                    .height(100.dp)
-                    .padding(start = 15.dp)
-                    .drawWithContent {
-                        drawIntoCanvas { canvas ->
-                            appBlock.appImage.setBounds(0, 0, size.width.toInt(), size.height.toInt())
-                            appBlock.appImage.draw(canvas.nativeCanvas)
-                        }
-                    }
-            )
-//            Image(
-//                painter = painterResource(id = appBlock.appImage),
-//                contentDescription = appBlock.name,
-//                modifier = Modifier
-//                    .width(100.dp)
-//                    .height(100.dp)
-//                    .padding(start = 15.dp),
-//                contentScale = ContentScale.Fit
-//            )
             Text(
-                text = appBlock.name,
-                style = MaterialTheme.typography.h2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .padding(start = 15.dp, top = 30.dp)
-                    .width(180.dp)
-//                    .width()
+                "Ela",
+                style = MaterialTheme.typography.h1
             )
-            Box(
-                modifier = Modifier
-                    .padding(top = 30.dp, end = 15.dp)
-                    .fillMaxSize(1f),
-                contentAlignment = Alignment.CenterEnd,
+        }
+
+        DailyTip("Cuidado con el Phishing", {})
+
+        DailyBlocksCard()
+    }
+}
+
+@Composable
+fun TopButtons(onSendAction: () -> Unit, onSettingsActions: () -> Unit) {
+    var showMenu by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+    ) {
+        IconButton(
+            onClick = onSendAction,
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.round_send_24),
+                contentDescription = "dudas",
+                tint = MaterialTheme.colors.primary,
+            )
+        }
+        Box {
+            IconButton(onClick = { showMenu = !showMenu }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "más opciones")
+            }
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = {
+                    showMenu = false
+                },
             ) {
-                Box(
-                    modifier = Modifier
-                        .defaultMinSize(25.dp)
-                        .width(25.dp)
-                        .height(25.dp)
-                        .clip(RoundedCornerShape(15.dp))
-                        .background(MaterialTheme.colors.primary),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "${appBlock.blocks.size}",
-                        color = MaterialTheme.colors.onPrimary,
-                    )
+                DropdownMenuItem(onClick = onSettingsActions) {
+                    Text("Ajustes")
                 }
             }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun AppBlockCardPreview() {
-    ElaTheme {
-//        AppBlockCard(appBlock = AppBlock(
-//            "Samsung Internet",
-//            listOf(InternetBlock("1h", "virus.com", listOf("Phishing"))),
-//            R.drawable.samsung_internet
-//        ))
+fun DailyTip(content: String, onClick: () -> Unit) {
+    Card(
+        backgroundColor = MaterialTheme.colors.primary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)
+            .clickable {
+
+            },
+        elevation = 5.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(20.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                "Consejo del día:",
+                style = MaterialTheme.typography.caption.copy(
+                    color = MaterialTheme.colors.onPrimary,
+                    fontWeight = FontWeight.ExtraBold
+                ),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                "Cuidado con el Phishing",
+                style = MaterialTheme.typography.h2.copy(color = MaterialTheme.colors.onPrimary),
+                textAlign = TextAlign.Center
+            )
+        }
+
     }
 }
 
+@Composable
+fun CardWithTitle(
+    top: @Composable RowScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)
+            .clickable {
+                onClick()
+            },
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(vertical = 20.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                top(this)
+
+                Icon(Icons.Default.ArrowForward, contentDescription = null)
+            }
+
+            Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
+
+            content(this)
+        }
+
+    }
+}
+
+@Composable
+fun DailyBlocksCard() {
+    CardWithTitle(
+        top = {
+            Column {
+                Text(
+                    text = "15",
+                    style = MaterialTheme.typography.h2.copy(fontWeight = FontWeight.ExtraBold),
+                )
+                Text(text = "tráfico sospechoso bloqueado hoy.", style = MaterialTheme.typography.caption)
+            }
+        },
+        onClick = {},
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+            ) {
+                repeat(3) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .height(45.dp)
+                                .width(45.dp)
+                                .padding(end = 10.dp, top = 5.dp, bottom = 5.dp)
+                                .background(Color.Black)
+                        )
+                        Column {
+                            Text("Samsung Internet", fontWeight = FontWeight.Bold)
+                            Text("3 bloqueos", style = MaterialTheme.typography.caption)
+                        }
+                    }
+                }
+            }
+        }
+    )
+}

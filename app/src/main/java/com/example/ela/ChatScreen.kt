@@ -2,6 +2,7 @@ package com.example.ela
 
 import android.util.Log
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,7 +17,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -92,13 +94,23 @@ fun ChatScreen(
 
 @Composable
 fun MessageList(messages: List<MessageData>, writingBubble: Boolean, modifier: Modifier) {
+    val image = ImageBitmap.imageResource(R.drawable.background_tile)
     val lazyListState = rememberLazyListState()
+    val brush = remember {
+        ShaderBrush(
+            ImageShader(
+                image,
+                TileMode.Repeated,
+                TileMode.Repeated,
+            )
+        )
+    }
 
     LaunchedEffect(messages, writingBubble) {
         lazyListState.scrollToItem(maxOf(messages.size - 1, 0))
     }
 
-    Box(modifier) {
+    Box(modifier.background(brush)) {
         LazyColumn(
             state = lazyListState,
             verticalArrangement = Arrangement.Bottom,

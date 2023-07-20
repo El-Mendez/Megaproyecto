@@ -9,7 +9,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -17,10 +18,21 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit) {
+    val image = ImageBitmap.imageResource(R.drawable.background_tile)
+    val brush = remember {
+        ShaderBrush(
+            ImageShader(
+                image,
+                TileMode.Repeated,
+                TileMode.Repeated,
+            )
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colors.background)
+            .background(brush)
     ) {
         TopButtons(onSend, onSettings)
         Box(
@@ -128,6 +140,7 @@ fun CardWithTitle(
             .clickable {
                 onClick()
             },
+        elevation = 10.dp,
     ) {
         Column(
             modifier = Modifier

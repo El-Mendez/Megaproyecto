@@ -18,6 +18,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.ela.model.AppBlock
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun DailyBlocksScreen(onReturn: (() -> Unit)?) {
@@ -33,26 +35,40 @@ fun DailyBlocksScreen(onReturn: (() -> Unit)?) {
 
 @Composable
 fun DailyBlocks(modifier: Modifier = Modifier) {
-    var apps: List<AppBlock> by remember { mutableStateOf(listOf()) }
     val context = LocalContext.current
+    var loading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        val packageManager = context.packageManager
+    val apps: List<AppBlock> by produceState(listOf()) {
+        return@produceState withContext(Dispatchers.IO) {
+            val packageManager = context.packageManager
 
-        val allApps = packageManager.getInstalledApplications(PackageManager.MATCH_ALL)
-        val appBlocks = mutableListOf<AppBlock>()
+            val allApps = packageManager.getInstalledApplications(PackageManager.MATCH_ALL)
+            val appBlocks = mutableListOf<AppBlock>()
 
-        allApps.forEach {
-            val icon = it.loadIcon(packageManager)
-            val name = it.loadLabel(packageManager).toString()
+            allApps.forEach {
+                val icon = it.loadIcon(packageManager)
+                val name = it.loadLabel(packageManager).toString()
 
-            appBlocks.add(AppBlock(name, listOf(), icon))
+                appBlocks.add(AppBlock(name, listOf(), icon))
+            }
+
+            loading = false
+            value = appBlocks
         }
-
-        apps = appBlocks
     }
 
     Box(modifier = modifier) {
+        if (loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
         LazyColumn(modifier = Modifier.padding(horizontal = 20.dp)) {
             items(apps) { app ->
                 Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))

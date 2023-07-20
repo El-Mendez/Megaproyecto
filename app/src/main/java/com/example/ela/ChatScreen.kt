@@ -262,8 +262,8 @@ fun ChatTopBar(onReturn: (() -> Unit)?) {
     TopAppBar(
         title = {
             Text(
-                text = "ELLA",
-                style = MaterialTheme.typography.h1,
+                text = "ELA",
+                style = MaterialTheme.typography.h2,
             )
         },
         elevation = 12.dp,

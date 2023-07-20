@@ -68,7 +68,7 @@ fun SettingsTopBar(onReturn: (() -> Unit)?) {
         title = {
             Text(
                 text = "Ajustes",
-                style = MaterialTheme.typography.h1,
+                style = MaterialTheme.typography.h2,
             )
         },
         elevation = 12.dp,

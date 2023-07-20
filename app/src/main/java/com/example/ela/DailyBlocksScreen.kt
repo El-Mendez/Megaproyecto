@@ -110,7 +110,7 @@ fun DailyBlocksTopBar(onReturn: (() -> Unit)?) {
         title = {
             Text(
                 text = "Tráfico Web",
-                style = MaterialTheme.typography.h1,
+                style = MaterialTheme.typography.h2,
             )
         },
         elevation = 12.dp,

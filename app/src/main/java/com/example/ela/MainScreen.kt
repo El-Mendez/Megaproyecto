@@ -1,5 +1,7 @@
 package com.example.ela
 
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -35,21 +37,49 @@ fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit
             .background(brush)
     ) {
         TopButtons(onSend, onSettings)
-        Box(
+
+        Score(
             modifier = Modifier
                 .height(180.dp)
                 .fillMaxWidth(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                "Ela",
-                style = MaterialTheme.typography.h1.copy(color = MaterialTheme.colors.onBackground)
-            )
-        }
+            score = 10,
+        )
 
         DailyTip("Cuidado con el Phishing", onSend)
 
         DailyBlocksCard(onDetails)
+    }
+}
+
+@Composable
+fun Score(score: Int, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+
+        var animationStarted by remember { mutableStateOf(false) }
+        val animatedScore by animateIntAsState(
+            targetValue = if(animationStarted) score else 0,
+            animationSpec = tween(5000)
+        )
+
+        LaunchedEffect(Unit) {
+            animationStarted = true
+        }
+
+        Text(
+            animatedScore.toString(),
+            style = MaterialTheme.typography.h1.copy(
+                color = MaterialTheme.colors.onBackground,
+                fontWeight = FontWeight.Black
+            )
+        )
+        Text(
+            "Tu puntaje de hábitos de Seguridad",
+            style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.onBackground)
+        )
     }
 }
 

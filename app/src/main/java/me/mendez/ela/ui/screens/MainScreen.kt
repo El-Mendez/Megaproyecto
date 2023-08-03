@@ -50,7 +50,9 @@ fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit
 
         DailyTip("Cuidado con el Phishing", onSend)
 
-        DailyBlocksCard(onDetails)
+//        DailyBlocksCard(onDetails)
+
+        EmptyDailyBlocksCard()
     }
 }
 
@@ -82,7 +84,7 @@ fun Score(score: Int, modifier: Modifier = Modifier) {
             Text(
                 animatedScore.toString(),
                 style = MaterialTheme.typography.h1.copy(
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colors.primary,
                     fontWeight = FontWeight.Black
                 )
             )
@@ -144,6 +146,7 @@ fun DailyTip(content: String, onClick: () -> Unit) {
                 onClick()
             },
         elevation = 5.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colors.primarySurface)
     ) {
         Column(
             modifier = Modifier
@@ -247,4 +250,31 @@ fun DailyBlocksCard(onClick: () -> Unit) {
             }
         }
     )
+}
+
+@Composable
+fun EmptyDailyBlocksCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
+        elevation = 10.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "No has tenido ningún tráfico sospechoso hoy",
+                style = MaterialTheme.typography.h2.copy(fontWeight = FontWeight.ExtraBold),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Icon(
+                painter = painterResource(id = R.drawable.round_celebration_96),
+                contentDescription = null,
+                tint = MaterialTheme.colors.primary,
+            )
+        }
+    }
 }

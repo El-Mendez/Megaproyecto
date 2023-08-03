@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
@@ -54,33 +56,41 @@ fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit
 
 @Composable
 fun Score(score: Int, modifier: Modifier = Modifier) {
-    Column(
+    Box(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        contentAlignment = Alignment.Center,
     ) {
 
         var animationStarted by remember { mutableStateOf(false) }
         val animatedScore by animateIntAsState(
             targetValue = if (animationStarted) score else 0,
-            animationSpec = tween(5000)
+            animationSpec = tween(5000), label = "score animation"
         )
 
         LaunchedEffect(Unit) {
             animationStarted = true
         }
 
-        Text(
-            animatedScore.toString(),
-            style = MaterialTheme.typography.h1.copy(
-                color = MaterialTheme.colors.onBackground,
-                fontWeight = FontWeight.Black
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colors.background)
+                .padding(25.dp)
+                .clip(RoundedCornerShape(7.dp)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                animatedScore.toString(),
+                style = MaterialTheme.typography.h1.copy(
+                    color = MaterialTheme.colors.onBackground,
+                    fontWeight = FontWeight.Black
+                )
             )
-        )
-        Text(
-            "Tu puntaje de hábitos de Seguridad",
-            style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.onBackground)
-        )
+            Text(
+                "Tu puntaje de hábitos de Seguridad",
+                style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.onBackground)
+            )
+        }
     }
 }
 

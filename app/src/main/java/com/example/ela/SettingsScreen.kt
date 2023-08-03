@@ -10,31 +10,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SettingsScreen(onReturn: (() -> Unit)?) {
-    Scaffold (
+fun SettingsScreen(onReturn: (() -> Unit)?, isEnabled: Boolean, onToggle: (Boolean) -> Unit) {
+    Scaffold(
         topBar = {
             SettingsTopBar(onReturn)
         },
         content = {
-            Settings(modifier = Modifier.padding(it))
+            Settings(
+                modifier = Modifier.padding(it),
+                isEnabled = isEnabled,
+                onToggle = onToggle,
+            )
         }
     )
 }
 
 @Composable
-fun Settings(modifier: Modifier = Modifier) {
+fun Settings(modifier: Modifier = Modifier, isEnabled: Boolean, onToggle: (Boolean) -> Unit) {
     Column(modifier) {
         SettingItem(
             title = "Bloquear conexiones",
-            text = "Automáticamente bloquear el tráfico tráfico sospechoso."
+            text = "Automáticamente bloquear el tráfico tráfico sospechoso.",
+            isEnabled = isEnabled,
+            onToggle = onToggle,
         )
     }
 }
 
 @Composable
-fun SettingItem(modifier: Modifier = Modifier, title: String, text: String) {
-    var on by remember { mutableStateOf(false) }
-
+fun SettingItem(modifier: Modifier = Modifier, title: String, text: String, isEnabled: Boolean, onToggle: (Boolean) -> Unit) {
     Box(
         modifier = modifier,
     ) {
@@ -53,10 +57,8 @@ fun SettingItem(modifier: Modifier = Modifier, title: String, text: String) {
                 )
             }
             Switch(
-                checked = on,
-                onCheckedChange = {
-                    on = it
-                }
+                checked = isEnabled,
+                onCheckedChange = onToggle,
             )
         }
     }

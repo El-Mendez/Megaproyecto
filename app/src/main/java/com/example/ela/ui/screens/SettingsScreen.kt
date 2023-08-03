@@ -1,4 +1,4 @@
-package com.example.ela
+package com.example.ela.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -38,7 +38,13 @@ fun Settings(modifier: Modifier = Modifier, isEnabled: Boolean, onToggle: (Boole
 }
 
 @Composable
-fun SettingItem(modifier: Modifier = Modifier, title: String, text: String, isEnabled: Boolean, onToggle: (Boolean) -> Unit) {
+fun SettingItem(
+    modifier: Modifier = Modifier,
+    title: String,
+    text: String,
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
     Box(
         modifier = modifier,
     ) {

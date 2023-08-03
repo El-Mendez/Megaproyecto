@@ -1,4 +1,4 @@
-package com.example.ela
+package com.example.ela.ui.screens
 
 import android.util.Log
 import androidx.compose.animation.core.*
@@ -25,18 +25,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ela.R
 import com.example.ela.model.MessageData
 import com.example.ela.remote.ChatApi
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.*
+import javax.inject.Inject
 
-class ChatViewModel : ViewModel() {
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    val chatApi: ChatApi
+) : ViewModel() {
     val messages: SnapshotStateList<MessageData> = mutableStateListOf()
     val calculatingResponse = mutableStateOf(false)
 
-    fun sendMessage(content: String, api: ChatApi) {
+    fun sendMessage(content: String) {
         messages.add(
             MessageData(
                 content,
@@ -48,7 +54,7 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch {
             calculatingResponse.value = true
             try {
-                val res = api.getResponse(messages)
+                val res = chatApi.getResponse(messages)
                 messages.addAll(res)
             } catch (e: Exception) {
                 messages.add(
@@ -236,7 +242,9 @@ fun WrittingBubble() {
             .padding(vertical = 5.dp, horizontal = 22.dp),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 6.dp).offset(y = 5.dp)
+            modifier = Modifier
+                .padding(horizontal = 6.dp)
+                .offset(y = 5.dp)
         ) {
             Text(
                 text = "⬤",

@@ -1,4 +1,4 @@
-package com.example.ela
+package com.example.ela.ui.screens
 
 import android.content.pm.PackageManager
 import androidx.compose.foundation.clickable
@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun DailyBlocksScreen(onReturn: (() -> Unit)?) {
-    Scaffold (
+    Scaffold(
         topBar = {
             DailyBlocksTopBar(onReturn)
         },

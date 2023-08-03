@@ -1,4 +1,4 @@
-package com.example.ela
+package com.example.ela.ui.screens
 
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -17,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.ela.R
 
 @Composable
 fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit) {
@@ -61,7 +62,7 @@ fun Score(score: Int, modifier: Modifier = Modifier) {
 
         var animationStarted by remember { mutableStateOf(false) }
         val animatedScore by animateIntAsState(
-            targetValue = if(animationStarted) score else 0,
+            targetValue = if (animationStarted) score else 0,
             animationSpec = tween(5000)
         )
 

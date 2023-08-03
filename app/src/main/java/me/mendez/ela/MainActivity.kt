@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -14,7 +13,6 @@ import me.mendez.ela.services.NotificationService
 import me.mendez.ela.settings.ElaSettings
 import me.mendez.ela.ui.theme.ElaTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import me.mendez.ela.ui.screens.*
 import javax.inject.Inject
 
@@ -33,9 +31,7 @@ class MainActivity : ComponentActivity() {
             ElaTheme {
                 val navController = rememberNavController()
                 val chatViewModel = viewModel<ChatViewModel>()
-                val scope = rememberCoroutineScope()
                 val elaSettings = elaSettingsStore.data.collectAsState(initial = ElaSettings.default()).value
-
 
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
@@ -48,6 +44,10 @@ class MainActivity : ComponentActivity() {
                             },
                             onDetails = {
                                 navController.navigate("details")
+                            },
+                            vpnEnabled = elaSettings.vpnRunning,
+                            enableVpn = {
+                                navController.navigate("settings")
                             }
                         )
                     }
@@ -66,14 +66,7 @@ class MainActivity : ComponentActivity() {
                     composable("settings") {
                         SettingsScreen(
                             onReturn = { navController.popBackStack() },
-                            isEnabled = elaSettings.blockDefault,
-                            onToggle = {
-                                scope.launch {
-                                    elaSettingsStore.updateData { old ->
-                                        old.copy(blockDefault = it)
-                                    }
-                                }
-                            }
+                            settingsStore = elaSettingsStore,
                         )
                     }
 

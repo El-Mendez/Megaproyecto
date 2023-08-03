@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import me.mendez.ela.R
 
 @Composable
-fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit) {
+fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit, vpnEnabled: Boolean, enableVpn: () -> Unit) {
     val image = ImageBitmap.imageResource(R.drawable.background_tile)
     val brush = remember {
         ShaderBrush(
@@ -47,6 +47,10 @@ fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit
                 .fillMaxWidth(),
             score = 10,
         )
+
+        if (!vpnEnabled) {
+            DisabledWarning(enableVpn)
+        }
 
         DailyTip("Cuidado con el Phishing", onSend)
 
@@ -146,7 +150,7 @@ fun DailyTip(content: String, onClick: () -> Unit) {
                 onClick()
             },
         elevation = 5.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colors.primarySurface)
+        border = BorderStroke(1.dp, MaterialTheme.colors.primary)
     ) {
         Column(
             modifier = Modifier
@@ -273,8 +277,30 @@ fun EmptyDailyBlocksCard() {
             Icon(
                 painter = painterResource(id = R.drawable.round_celebration_96),
                 contentDescription = null,
-                tint = MaterialTheme.colors.primary,
+                tint = MaterialTheme.colors.onBackground.copy(alpha = 0.2f),
             )
         }
+    }
+}
+
+@Composable
+fun DisabledWarning(onClick: () -> Unit) {
+    Card(
+        backgroundColor = Color.Red,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)
+            .clickable { onClick() },
+        elevation = 10.dp,
+    ) {
+        Text(
+            text = "No estás protegido por Ela",
+            style = MaterialTheme.typography.h2,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 20.dp)
+        )
     }
 }

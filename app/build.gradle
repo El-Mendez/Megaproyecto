@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.ela'
+    namespace 'me.mendez.ela'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.example.ela"
+        applicationId "me.mendez.ela"
         minSdk 24
         targetSdk 33
         versionCode 1

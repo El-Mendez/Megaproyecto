@@ -45,14 +45,14 @@ fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit
             modifier = Modifier
                 .height(180.dp)
                 .fillMaxWidth(),
-            score = 10,
+            score = 128,
         )
 
         if (!vpnEnabled) {
             DisabledWarning(enableVpn)
         }
 
-        DailyTip("Cuidado con el Phishing", onSend)
+        DailyTip("Actualiza tus contraseñas frecuentemente.", onSend)
 
 //        DailyBlocksCard(onDetails)
 

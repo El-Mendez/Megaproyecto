@@ -23,17 +23,6 @@ android {
             useSupportLibrary true
         }
 
-        externalNativeBuild {
-            cmake {
-                cppFlags ""
-                arguments "-DANDROID_PLATFORM=android-22"
-            }
-        }
-
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-        }
-
         Properties properties = new Properties()
         properties.load(project.rootProject.file("local.properties").newDataInputStream())
         buildConfigField("String", "GPT_API_KEY", "\"${properties.getProperty("GPT_API_KEY")}\"")
@@ -80,6 +69,7 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
 
+    // api request stuff
     def ktor_version = "2.3.1"
     implementation("io.ktor:ktor-client-android:$ktor_version")
     implementation("io.ktor:ktor-client-core:$ktor_version")
@@ -91,7 +81,6 @@ dependencies {
 
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1'
 
     implementation "androidx.navigation:navigation-compose:2.6.0"
@@ -100,6 +89,10 @@ dependencies {
 
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
+
+    implementation 'org.pcap4j:pcap4j-core:1.8.2'
+    implementation 'org.pcap4j:pcap4j-packetfactory-static:1.8.2'
+    implementation 'dnsjava:dnsjava:3.0.0'
 }
 
 kapt {

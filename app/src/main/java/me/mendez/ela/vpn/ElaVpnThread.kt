@@ -31,16 +31,16 @@ class ElaVpnThread(val service: VpnService) {
 
         shouldStop.set(false)
 //        val tunnel = startBypassTunnel()
-//        val vpnInterface = startVpnInterface(builder)!!
+        val vpnInterface = startVpnInterface(builder)!!
 //        val thread = threadStart(vpnInterface, tunnel)
-//        val thread = threadStart(vpnInterface)
+        val thread = threadStart(vpnInterface)
 
-//        thread.start()
-//        threadContainer = ThreadContainer(
+        thread.start()
+        threadContainer = ThreadContainer(
 //            tunnel,
-//            vpnInterface,
-//            thread
-//        )
+            vpnInterface,
+            thread
+        )
     }
 
     private fun threadStart(vpnInterface: ParcelFileDescriptor): Thread {
@@ -74,9 +74,10 @@ class ElaVpnThread(val service: VpnService) {
 //        tunnel.configureBlocking(false)
 //        return tunnel
 //    }
+
     private fun startVpnInterface(builder: VpnService.Builder): ParcelFileDescriptor? {
         Log.d(TAG, "starting vpn interface")
-        builder.addAddress("10.1.10.1", 32) // TODO
+        builder.addAddress("10.0.2.0", 32) // TODO
         builder.addRoute("0.0.0.0", 0)
         builder.addDisallowedApplication(BuildConfig.APPLICATION_ID)
 
@@ -87,13 +88,13 @@ class ElaVpnThread(val service: VpnService) {
     @Synchronized
     fun stop() {
         Log.d(TAG, "Stopping thread")
-//        shouldStop.set(true)
-//
-//        val threadContainer = threadContainer ?: return
+        shouldStop.set(true)
+
+        val threadContainer = threadContainer ?: return
 //        closeBypassTunnel(threadContainer.bypassTunnel)
-//        closeThreadOnly(threadContainer.thread)
-//        closeInterfaceOnly(threadContainer.vpnInterface)
-//        this.threadContainer = null
+        closeThreadOnly(threadContainer.thread)
+        closeInterfaceOnly(threadContainer.vpnInterface)
+        this.threadContainer = null
     }
 
     private fun closeThreadOnly(thread: Thread) {

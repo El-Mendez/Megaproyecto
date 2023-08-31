@@ -1,9 +1,12 @@
 package me.mendez.ela
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
+import androidx.core.app.ActivityCompat
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -14,6 +17,7 @@ import me.mendez.ela.settings.ElaSettings
 import me.mendez.ela.ui.theme.ElaTheme
 import dagger.hilt.android.AndroidEntryPoint
 import me.mendez.ela.ui.screens.*
+import me.mendez.ela.vpn.ElaVpn
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -67,6 +71,35 @@ class MainActivity : ComponentActivity() {
                         SettingsScreen(
                             onReturn = { navController.popBackStack() },
                             settingsStore = elaSettingsStore,
+                            requestVpnPermission = {
+                                ElaVpn.createChannel(this@MainActivity)
+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    ActivityCompat.requestPermissions(
+                                        this@MainActivity,
+                                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                                        0
+                                    )
+                                }
+
+                                Intent(applicationContext, ElaVpn::class.java).also { intent ->
+                                    intent.action =
+                                        if (it) {
+                                            ElaVpn.Commands.START.toString()
+                                        } else {
+                                            ElaVpn.Commands.STOP.toString()
+                                        }
+                                    startService(intent)
+                                }
+                            },
+                            onUpdate = {
+                                Intent(applicationContext, ElaVpn::class.java).also { intent ->
+                                    if (elaSettings.vpnRunning) {
+                                        intent.action = ElaVpn.Commands.RESTART.toString()
+                                        startService(intent)
+                                    }
+                                }
+                            }
                         )
                     }
 

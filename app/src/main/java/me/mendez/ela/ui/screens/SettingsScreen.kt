@@ -13,7 +13,12 @@ import kotlinx.coroutines.launch
 import me.mendez.ela.settings.ElaSettings
 
 @Composable
-fun SettingsScreen(onReturn: (() -> Unit)?, settingsStore: DataStore<ElaSettings>) {
+fun SettingsScreen(
+    onReturn: (() -> Unit)?,
+    settingsStore: DataStore<ElaSettings>,
+    requestVpnPermission: (Boolean) -> Unit,
+    onUpdate: () -> Unit,
+) {
     Scaffold(
         topBar = {
             SettingsTopBar(onReturn)
@@ -22,13 +27,20 @@ fun SettingsScreen(onReturn: (() -> Unit)?, settingsStore: DataStore<ElaSettings
             Settings(
                 modifier = Modifier.padding(it),
                 settingsStore,
+                requestVpnPermission,
+                onUpdate,
             )
         }
     )
 }
 
 @Composable
-fun Settings(modifier: Modifier = Modifier, settingsStore: DataStore<ElaSettings>) {
+fun Settings(
+    modifier: Modifier = Modifier,
+    settingsStore: DataStore<ElaSettings>,
+    requestVpnPermission: (Boolean) -> Unit,
+    onUpdate: () -> Unit,
+) {
     val scope = rememberCoroutineScope()
     val elaSettings = settingsStore.data.collectAsState(initial = ElaSettings.default()).value
 
@@ -40,6 +52,7 @@ fun Settings(modifier: Modifier = Modifier, settingsStore: DataStore<ElaSettings
             onToggle = {
                 scope.launch {
                     settingsStore.updateData { old ->
+                        requestVpnPermission(it)
                         old.copy(vpnRunning = it)
                     }
                 }
@@ -54,6 +67,7 @@ fun Settings(modifier: Modifier = Modifier, settingsStore: DataStore<ElaSettings
             onToggle = {
                 scope.launch {
                     settingsStore.updateData { old ->
+                        onUpdate()
                         old.copy(blockDefault = it)
                     }
                 }

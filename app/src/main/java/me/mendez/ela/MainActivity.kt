@@ -26,6 +26,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import me.mendez.ela.ui.screens.*
+import me.mendez.ela.ui.screens.chat.ChatScreen
+import me.mendez.ela.ui.screens.chat.ChatViewModel
+import me.mendez.ela.ui.screens.settings.SettingsScreen
 import me.mendez.ela.vpn.ElaVpn
 import javax.inject.Inject
 

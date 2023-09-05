@@ -1,7 +1,9 @@
 package me.mendez.ela
 
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -35,10 +37,19 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var elaSettingsStore: DataStore<ElaSettings>
 
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-        if (it) {
-            Log.i(TAG, "user accepted permissions")
+    private val waitForIntentResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        Log.d(TAG, "vpn permission state $it")
+        if (it.resultCode == Activity.RESULT_OK) {
             startVpn()
+        } else {
+            setVpnStatus(false)
+        }
+    }
+
+    private val requestPermissions = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (it) {
+            Log.i(TAG, "user notification permission accepted")
+            tryStartVpn()
         } else {
             Log.i(TAG, "user rejected permissions. Turn off vpn")
             setVpnStatus(false)
@@ -96,20 +107,17 @@ class MainActivity : ComponentActivity() {
                                     return@SettingsScreen
                                 }
 
-                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                    Log.d(TAG, "starting vpn, no permissions needed")
-                                    startVpn()
-                                    return@SettingsScreen
+                                setVpnStatus(true)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    if (!notificationPermission()) {
+                                        Log.i(TAG, "notifications permissions not granted!")
+                                        askForNotificationPermissions()
+                                        return@SettingsScreen
+                                    }
                                 }
 
-                                if (permissionsAlreadyGranted()) {
-                                    Log.d(TAG, "starting vpn, permissions already granted")
-                                    startVpn()
-                                } else {
-                                    setVpnStatus(true)
-                                    Log.i(TAG, "launching start vpn permissions requests")
-                                    askForPermissions()
-                                }
+                                Log.d(TAG, "notification permissions is already granted")
+                                tryStartVpn()
                             },
                             onUpdate = { restartVpn() }
                         )
@@ -126,8 +134,8 @@ class MainActivity : ComponentActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun askForPermissions() {
-        requestPermissionLauncher.launch(
+    private fun askForNotificationPermissions() {
+        requestPermissions.launch(
             android.Manifest.permission.POST_NOTIFICATIONS
         )
     }
@@ -142,8 +150,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startVpn() {
+    private fun tryStartVpn() {
         setVpnStatus(true)
+
+        val status = VpnService.prepare(this)
+        if (status != null) {
+            Log.d(TAG, "waiting for service $status")
+            waitForIntentResult.launch(status)
+            return
+        }
+
+        startVpn()
+    }
+
+    private fun startVpn() {
         Intent(applicationContext, ElaVpn::class.java).also { intent ->
             intent.action = ElaVpn.Commands.START.toString()
             startService(intent)
@@ -167,7 +187,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun permissionsAlreadyGranted(): Boolean {
+    private fun notificationPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
             android.Manifest.permission.POST_NOTIFICATIONS,

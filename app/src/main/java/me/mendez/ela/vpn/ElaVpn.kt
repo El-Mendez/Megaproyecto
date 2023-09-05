@@ -1,17 +1,17 @@
 package me.mendez.ela.vpn
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.VpnService
 import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.core.DataStore
 import kotlinx.coroutines.*
 import me.mendez.ela.settings.ElaSettings
 import me.mendez.ela.settings.ElaSettingsModule
-import java.io.FileInputStream
-import java.net.InetSocketAddress
-import java.nio.ByteBuffer
-import java.nio.channels.DatagramChannel
 
 class ElaVpn : VpnService() {
     enum class Commands {
@@ -26,6 +26,7 @@ class ElaVpn : VpnService() {
     private var job: Job? = null
 
     private val vpnThread = ElaVpnThread(this)
+
 
     companion object {
         fun createChannel(context: Context) = VpnNotificationChannel.createChannel(context)
@@ -47,7 +48,6 @@ class ElaVpn : VpnService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "got notification ${intent?.action}")
         when (intent?.action) {
             Commands.START.toString() -> start()
             Commands.RESTART.toString() -> restart()
@@ -64,6 +64,13 @@ class ElaVpn : VpnService() {
 
     private fun start() {
         Log.i(TAG, "starting vpn")
+
+        val error = prepare(this)
+        if (error != null) {
+            errorStop(error.toString())
+            return
+        }
+
         startForeground(
             VpnNotificationChannel.FOREGROUND_ID,
             VpnNotificationChannel.runningNotification(this)
@@ -71,9 +78,29 @@ class ElaVpn : VpnService() {
         vpnThread.start(Builder())
     }
 
+    private fun errorStop(reason: String) {
+        updateStore { old -> old.copy(vpnRunning = false) }
+        Log.e(TAG, reason)
+
+        with(NotificationManagerCompat.from(this)) {
+            if (ActivityCompat.checkSelfPermission(
+                    this@ElaVpn,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                notify(
+                    VpnNotificationChannel.ERROR_ID,
+                    VpnNotificationChannel.errorNotification(this@ElaVpn)
+                )
+            }
+        }
+        stop()
+    }
+
     private fun stop() {
         Log.i(TAG, "stopped vpn")
         vpnThread.stop()
+
         stopSelf()
     }
 

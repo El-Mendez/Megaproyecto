@@ -12,6 +12,7 @@ import me.mendez.ela.R
 internal object VpnNotificationChannel {
     const val NOTIFICATION_CHANNEL_ID = BuildConfig.APPLICATION_ID
     const val FOREGROUND_ID = 1
+    const val ERROR_ID = 2
 
 
     fun runningNotification(context: Context): Notification {
@@ -19,6 +20,14 @@ internal object VpnNotificationChannel {
             .setSmallIcon(R.drawable.baseline_warning_24)
             .setContentTitle("Ela te está cuidando")
             .setContentText("Supervisando tráfico red...")
+            .build()
+    }
+
+    fun errorNotification(context: Context): Notification {
+        return NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.drawable.baseline_warning_24)
+            .setContentTitle("No se pudo iniciar Ela")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
     }
 

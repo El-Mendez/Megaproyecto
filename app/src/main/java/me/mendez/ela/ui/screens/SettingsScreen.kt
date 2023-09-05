@@ -16,7 +16,7 @@ import me.mendez.ela.settings.ElaSettings
 fun SettingsScreen(
     onReturn: (() -> Unit)?,
     settingsStore: DataStore<ElaSettings>,
-    requestVpnPermission: (Boolean) -> Unit,
+    startVpn: (Boolean) -> Unit,
     onUpdate: () -> Unit,
 ) {
     Scaffold(
@@ -27,7 +27,7 @@ fun SettingsScreen(
             Settings(
                 modifier = Modifier.padding(it),
                 settingsStore,
-                requestVpnPermission,
+                startVpn,
                 onUpdate,
             )
         }
@@ -38,7 +38,7 @@ fun SettingsScreen(
 fun Settings(
     modifier: Modifier = Modifier,
     settingsStore: DataStore<ElaSettings>,
-    requestVpnPermission: (Boolean) -> Unit,
+    startVpn: (Boolean) -> Unit,
     onUpdate: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -49,14 +49,7 @@ fun Settings(
             title = "Activar Protección",
             text = "Automáticamente bloquear el tráfico tráfico sospechoso.",
             isOn = elaSettings.vpnRunning,
-            onToggle = {
-                scope.launch {
-                    settingsStore.updateData { old ->
-                        requestVpnPermission(it)
-                        old.copy(vpnRunning = it)
-                    }
-                }
-            },
+            onToggle = { startVpn(it) },
             isEnabled = true,
         )
         SettingItem(

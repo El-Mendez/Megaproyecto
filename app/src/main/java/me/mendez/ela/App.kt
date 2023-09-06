@@ -1,12 +1,11 @@
 package me.mendez.ela
 
 import android.app.Application
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
 import android.os.Build
-import me.mendez.ela.services.NotificationService
 import dagger.hilt.android.HiltAndroidApp
+import me.mendez.ela.notifications.SuspiciousAppChannel
+import me.mendez.ela.notifications.SuspiciousTrafficChannel
+import me.mendez.ela.notifications.VpnChannel
 
 @HiltAndroidApp
 class App : Application() {
@@ -17,15 +16,9 @@ class App : Application() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                NotificationService.COUNTER_CHANNEL_ID,
-                "Tráfico Red",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            channel.description = "Muestra mensajes sobre dominios bloqueados"
-
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            SuspiciousAppChannel.createChannel(this)
+            SuspiciousTrafficChannel.createChannel(this)
+            VpnChannel.createChannel(this)
         }
     }
 }

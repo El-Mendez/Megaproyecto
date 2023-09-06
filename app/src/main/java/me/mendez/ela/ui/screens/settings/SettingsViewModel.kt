@@ -32,8 +32,28 @@ class SettingsViewModel @Inject constructor(
     val state: Flow<ElaSettings>
         get() = dataStore.data
 
+    fun updateSettings(
+        updater: (ElaSettings) -> ElaSettings,
+        context: Context,
+        stringContract: ActivityResultLauncher<String>,
+        intentContract: ActivityResultLauncher<Intent>
+    ) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                dataStore.updateData { old ->
+                    val updated = updater(old)
+                    if (old.vpnRunning != updated.vpnRunning) {
+                        trySetVpnStatus(updated.vpnRunning, context, stringContract, intentContract)
+                    } else if (old.vpnRunning && old != updated) {
+                        restartVpn(context)
+                    }
+                    updated
+                }
+            }
+        }
+    }
 
-    fun trySetVpnStatus(
+    private fun trySetVpnStatus(
         it: Boolean,
         context: Context,
         stringContract: ActivityResultLauncher<String>,
@@ -97,7 +117,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun restartVpn(context: Context) {
+    private fun restartVpn(context: Context) {
         setVpnStatus(true)
         Intent(context, ElaVpn::class.java).also { intent ->
             intent.action = ElaVpn.Commands.RESTART.toString()

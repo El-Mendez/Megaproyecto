@@ -11,7 +11,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import me.mendez.ela.services.NotificationService
 import me.mendez.ela.settings.ElaSettings
 import me.mendez.ela.ui.theme.ElaTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,14 +24,11 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private lateinit var notificationService: NotificationService
-
     @Inject
     lateinit var elaSettingsStore: DataStore<ElaSettings>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        notificationService = NotificationService(applicationContext)
 
         setContent {
             ElaTheme {
@@ -87,27 +83,26 @@ class MainActivity : ComponentActivity() {
                     composable("settings") {
                         SettingsScreen(
                             onReturn = navController::popBackStack,
-                            settingsStore = elaSettingsStore,
-                            startVpn = {
-                                settingsViewModel.trySetVpnStatus(it, this@MainActivity, stringContract, intentContract)
-                            },
-                            onUpdate = { settingsViewModel.restartVpn(this@MainActivity) }
+                            settings = settingsViewModel.state.collectAsState(initial = ElaSettings.default()).value,
+                            update = {
+                                settingsViewModel.updateSettings(
+                                    it,
+                                    this@MainActivity,
+                                    stringContract,
+                                    intentContract
+                                )
+                            }
                         )
                     }
 
                     composable("details") {
-                        DailyBlocksScreen {
-                            navController.popBackStack()
-                        }
+                        DailyBlocksScreen(
+                            onReturn = navController::popBackStack
+                        )
                     }
                 }
             }
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        notificationService.showNotification(5, "WhatsApp")
     }
 }
 

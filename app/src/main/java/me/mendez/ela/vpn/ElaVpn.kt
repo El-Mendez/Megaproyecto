@@ -27,7 +27,7 @@ class ElaVpn : VpnService() {
     private fun getCurrentSettings(): ElaSettings {
         lateinit var settings: ElaSettings
         runBlocking {
-            delay(100)
+            delay(200)
             elaSettingsStore.data.collect {
                 settings = it
             }

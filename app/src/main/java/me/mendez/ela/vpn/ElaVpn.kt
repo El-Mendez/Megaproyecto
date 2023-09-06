@@ -21,7 +21,6 @@ class ElaVpn : VpnService() {
     val TAG = "VPN"
 
     private val elaSettingsStore: DataStore<ElaSettings> = ElaSettingsModule.provideElaSettingsStore(this)
-    private val globalJob = SupervisorJob()
 
     private val vpnThread = ElaVpnThread(this)
 
@@ -99,10 +98,5 @@ class ElaVpn : VpnService() {
             }
         }
         stop()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        globalJob.cancel()
     }
 }

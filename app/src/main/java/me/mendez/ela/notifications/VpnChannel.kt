@@ -16,7 +16,7 @@ object VpnChannel : BaseNotificationChannel() {
 
     fun runningNotification(context: Context): Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.log_24)
+            .setSmallIcon(R.drawable.logo_24)
             .setColor(Color.RED)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentText("Supervisando tráfico red")
@@ -26,7 +26,7 @@ object VpnChannel : BaseNotificationChannel() {
 
     fun errorNotification(context: Context): Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.log_24)
+            .setSmallIcon(R.drawable.logo_24)
             .setColor(Color.RED)
             .setContentTitle("Ela")
             .setContentText("No se pudo iniciar Ela")

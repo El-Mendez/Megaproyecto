@@ -17,7 +17,7 @@ private data class ThreadContainer(
 
 private const val TAG = "ELA_VPN"
 
-class ElaVpnThread(val service: VpnService) {
+class ElaVpnThread(val service: ElaVpn) {
 
     private var shouldStop = AtomicBoolean(false)
     private var threadContainer: ThreadContainer? = null
@@ -35,6 +35,7 @@ class ElaVpnThread(val service: VpnService) {
 //        val thread = threadStart(vpnInterface, tunnel)
         val thread = threadStart(vpnInterface)
 
+        thread.setUncaughtExceptionHandler { _, e -> service.errorStop(e.toString()) }
         thread.start()
         threadContainer = ThreadContainer(
 //            tunnel,

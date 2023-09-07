@@ -121,7 +121,7 @@ class ElaVpn : VpnService() {
         stopSelf()
     }
 
-    private fun errorStop(reason: String) {
+    fun errorStop(reason: String) {
         Log.e(TAG, reason)
 
         with(NotificationManagerCompat.from(this)) {
@@ -135,6 +135,12 @@ class ElaVpn : VpnService() {
                     VpnChannel.errorNotification(this@ElaVpn),
                 )
             }
+        }
+
+        try {
+            vpnThread.stop()
+        } catch (e: Exception) {
+            Log.e(TAG, "could not force stop vpn")
         }
         stop()
     }

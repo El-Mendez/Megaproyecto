@@ -22,6 +22,7 @@ import javax.inject.Singleton
 @Serializable
 data class ElaSettings(
     val vpnRunning: Boolean,
+    val startOnBoot: Boolean,
     val blockDefault: Boolean,
 ) {
     companion object {
@@ -29,6 +30,7 @@ data class ElaSettings(
             return ElaSettings(
                 vpnRunning = false,
                 blockDefault = true,
+                startOnBoot = false,
             )
         }
     }

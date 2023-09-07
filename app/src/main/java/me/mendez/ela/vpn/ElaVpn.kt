@@ -1,39 +1,73 @@
 package me.mendez.ela.vpn
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.VpnService
+import android.os.Build
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import me.mendez.ela.notifications.VpnChannel
 import me.mendez.ela.settings.ElaSettings
-import me.mendez.ela.settings.ElaSettingsModule
+import javax.inject.Inject
 
+private const val TAG = "VPN"
+
+@AndroidEntryPoint
 class ElaVpn : VpnService() {
-    enum class Commands {
+    private enum class Commands {
         START, STOP, RESTART
     }
 
-    val TAG = "VPN"
-
-    private val elaSettingsStore: DataStore<ElaSettings> = ElaSettingsModule.provideElaSettingsStore(this)
-
+    @Inject
+    lateinit var elaSettingsStore: DataStore<ElaSettings>
     private val vpnThread = ElaVpnThread(this)
 
-    private fun getCurrentSettings(): ElaSettings {
-        lateinit var settings: ElaSettings
-        runBlocking {
-            delay(200)
-            elaSettingsStore.data.collect {
-                settings = it
+    companion object {
+        @JvmStatic
+        suspend fun showRunning(running: Boolean, store: DataStore<ElaSettings>) {
+            store.updateData { it.copy(vpnRunning = running) }
+        }
+
+        @JvmStatic
+        fun sendStart(context: Context) {
+            Intent(context, ElaVpn::class.java).also { intent ->
+                intent.action = Commands.START.toString()
+                context.startService(intent)
             }
         }
 
-        return settings
+        @JvmStatic
+        fun sendStop(context: Context) {
+            Intent(context, ElaVpn::class.java).also { intent ->
+                intent.action = Commands.STOP.toString()
+                context.startService(intent)
+            }
+        }
+
+        @JvmStatic
+        fun sendRestart(context: Context) {
+            Intent(context, ElaVpn::class.java).also { intent ->
+                intent.action = Commands.RESTART.toString()
+                context.startService(intent)
+            }
+        }
+
+        @JvmStatic
+        fun haveAllPermissions(context: Context): Boolean {
+            return (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED) && prepare(context) == null
+
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,32 +92,37 @@ class ElaVpn : VpnService() {
             VpnChannel.FOREGROUND_ID,
             VpnChannel.runningNotification(this)
         )
+
         vpnThread.start(Builder())
+
+        runBlocking {
+            showRunning(true, elaSettingsStore)
+        }
     }
 
     private fun restart() {
         Log.i(TAG, "restarting vpn")
         vpnThread.stop()
         vpnThread.start(Builder())
+
+        runBlocking {
+            showRunning(true, elaSettingsStore)
+        }
     }
 
     private fun stop() {
         Log.i(TAG, "stopped vpn")
         vpnThread.stop()
-        stopSelf()
-    }
 
-    private fun disableVpnInSettings() {
         runBlocking {
-            elaSettingsStore.updateData {
-                it.copy(vpnRunning = false)
-            }
+            showRunning(false, elaSettingsStore)
         }
+
+        stopSelf()
     }
 
     private fun errorStop(reason: String) {
         Log.e(TAG, reason)
-        disableVpnInSettings()
 
         with(NotificationManagerCompat.from(this)) {
             if (ActivityCompat.checkSelfPermission(

@@ -17,10 +17,10 @@ object VpnChannel : BaseNotificationChannel() {
     fun runningNotification(context: Context): Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.logo_24)
-            .setColor(Color.RED)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentText("Supervisando tráfico red")
             .setOngoing(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }
 

@@ -22,13 +22,14 @@ import kotlinx.coroutines.withContext
 import me.mendez.ela.settings.ElaSettings
 import me.mendez.ela.vpn.ElaVpn
 import javax.inject.Inject
+import kotlin.properties.Delegates
+
+private const val TAG = "ELA_SETTINGS"
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val dataStore: DataStore<ElaSettings>,
 ) : ViewModel() {
-    private val TAG = "SETTINGS"
-
     val state: Flow<ElaSettings>
         get() = dataStore.data
 
@@ -40,97 +41,107 @@ class SettingsViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
+                var changeState by Delegates.notNull<Boolean>()
+                var turnOn by Delegates.notNull<Boolean>()
+                var restart by Delegates.notNull<Boolean>()
+
                 dataStore.updateData { old ->
                     val updated = updater(old)
-                    if (old.vpnRunning != updated.vpnRunning) {
-                        trySetVpnStatus(updated.vpnRunning, context, stringContract, intentContract)
-                    } else if (old.vpnRunning && old != updated) {
-                        restartVpn(context)
-                    }
+
+                    restart = old.vpnRunning && updated.vpnRunning && old != updated
+                    changeState = old.vpnRunning != updated.vpnRunning
+                    turnOn = updated.vpnRunning
+
                     updated
+                }
+
+                if (restart) {
+                    Log.i(TAG, "changes were made when it was on. Trying to restart service.")
+                    ElaVpn.sendRestart(context)
+                    return@withContext
+                }
+
+                if (!changeState) {
+                    Log.i(TAG, "changes were made but it was off. Nothing to do.")
+                    return@withContext
+                }
+
+                if (turnOn) {
+                    Log.i(TAG, "attempting to start vpn")
+                    tryActivateVpn(context, stringContract, intentContract)
+                } else {
+                    Log.i(TAG, "stopping vpn")
+                    ElaVpn.sendStop(context)
                 }
             }
         }
     }
 
-    private fun trySetVpnStatus(
-        it: Boolean,
+    private fun tryActivateVpn(
         context: Context,
         stringContract: ActivityResultLauncher<String>,
         intentContract: ActivityResultLauncher<Intent>
     ) {
-        if (!it) {
-            Log.d(TAG, "stopping vpn")
-            stopVpn(context)
-            return
-        }
-
-        setVpnStatus(true)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (!notificationPermission(context)) {
-                Log.i(TAG, "notification permissions not granted!")
+            if (notificationPermission(context) != PackageManager.PERMISSION_GRANTED) {
+                Log.i(TAG, "We don't have notifications permissions yet! Waiting for user to accept them.")
                 askForNotificationPermissions(stringContract)
                 return
             }
         }
 
-        Log.d(TAG, "notification permissions are already granted")
-        tryStartVpn(context, intentContract)
+        onNotificationPermissionResponse(true, context, intentContract)
     }
 
-    private fun setVpnStatus(on: Boolean) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                dataStore.updateData { old ->
-                    old.copy(vpnRunning = on)
-                }
-            }
+    fun onNotificationPermissionResponse(
+        allowed: Boolean,
+        context: Context,
+        intentContract: ActivityResultLauncher<Intent>
+    ) {
+        if (!allowed) {
+            Log.i(TAG, "User rejected notification permissions. Cancel trying to turn on VPN")
+            cancelVpnStartRequest(dataStore)
+            return
         }
-    }
 
-    private fun tryStartVpn(context: Context, intentContract: ActivityResultLauncher<Intent>) {
-        setVpnStatus(true)
+        Log.d(TAG, "User notification permission accepted")
 
         val status = VpnService.prepare(context)
         if (status != null) {
-            Log.d(TAG, "waiting for service $status")
+            Log.i(TAG, "User hasn't approved the VPN use yet. Wait for their confirmation.")
             askForVpnPermission(intentContract, status)
             return
         }
-        startVpn(context)
+
+        onVpnPermissionResponse(
+            ActivityResult(Activity.RESULT_OK, null),
+            context,
+        )
     }
 
-
-    private fun startVpn(context: Context) {
-        setVpnStatus(true)
-        Intent(context, ElaVpn::class.java).also { intent ->
-            intent.action = ElaVpn.Commands.START.toString()
-            context.startService(intent)
+    fun onVpnPermissionResponse(result: ActivityResult, context: Context) {
+        if (result.resultCode == Activity.RESULT_OK) {
+            Log.d(TAG, "vpn permissions granted")
+            Log.i(TAG, "Vpn is ready to start!")
+            ElaVpn.sendStart(context)
+        } else {
+            Log.i(TAG, "vpn permissions denied")
+            cancelVpnStartRequest(dataStore)
         }
     }
 
-    private fun stopVpn(context: Context) {
-        setVpnStatus(false)
-        Intent(context, ElaVpn::class.java).also { intent ->
-            intent.action = ElaVpn.Commands.STOP.toString()
-            context.startService(intent)
-        }
-    }
-
-    private fun restartVpn(context: Context) {
-        setVpnStatus(true)
-        Intent(context, ElaVpn::class.java).also { intent ->
-            intent.action = ElaVpn.Commands.RESTART.toString()
-            context.startService(intent)
+    private fun cancelVpnStartRequest(dataStore: DataStore<ElaSettings>) {
+        viewModelScope.launch {
+            ElaVpn.showRunning(false, dataStore)
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun notificationPermission(context: Context): Boolean {
+    private fun notificationPermission(context: Context): Int {
         return ContextCompat.checkSelfPermission(
             context,
             android.Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
+        )
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -140,30 +151,7 @@ class SettingsViewModel @Inject constructor(
         )
     }
 
-    fun onNotificationPermissionResponse(
-        allowed: Boolean,
-        context: Context,
-        intentContract: ActivityResultLauncher<Intent>
-    ) {
-        if (allowed) {
-            Log.i(TAG, "user notification permission accepted")
-            tryStartVpn(context, intentContract)
-        } else {
-            Log.i(TAG, "user rejected permissions. Turn off vpn")
-            setVpnStatus(false)
-        }
-    }
-
     private fun askForVpnPermission(activityContract: ActivityResultLauncher<Intent>, intent: Intent) {
         activityContract.launch(intent)
-    }
-
-    fun onVpnPermissionResponse(result: ActivityResult, context: Context) {
-        Log.d(TAG, "vpn permission state $result")
-        if (result.resultCode == Activity.RESULT_OK) {
-            startVpn(context)
-        } else {
-            setVpnStatus(false)
-        }
     }
 }

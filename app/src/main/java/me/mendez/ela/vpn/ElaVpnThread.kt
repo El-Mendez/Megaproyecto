@@ -5,7 +5,6 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import me.mendez.ela.BuildConfig
 import java.io.FileInputStream
-import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.util.concurrent.atomic.AtomicBoolean
@@ -16,8 +15,9 @@ private data class ThreadContainer(
     val thread: Thread
 )
 
+private const val TAG = "ELA_VPN"
+
 class ElaVpnThread(val service: VpnService) {
-    private val TAG = "VPN"
 
     private var shouldStop = AtomicBoolean(false)
     private var threadContainer: ThreadContainer? = null
@@ -107,6 +107,7 @@ class ElaVpnThread(val service: VpnService) {
             Log.e(TAG, "could not join thread $e")
         }
     }
+
     private fun closeInterfaceOnly(vpnInterface: ParcelFileDescriptor) {
         Log.d(TAG, "closing vpn interface")
         try {

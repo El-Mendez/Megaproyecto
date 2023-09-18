@@ -4,20 +4,21 @@ import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import me.mendez.ela.BuildConfig
+import org.pcap4j.packet.IpPacket
+import org.pcap4j.packet.IpSelector
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.nio.ByteBuffer
-import java.nio.channels.DatagramChannel
 import java.util.concurrent.atomic.AtomicBoolean
 
 private data class ThreadContainer(
-//    val bypassTunnel: DatagramChannel,
     val vpnInterface: ParcelFileDescriptor,
     val thread: Thread
 )
 
 private const val TAG = "ELA_VPN"
 
-class ElaVpnThread(val service: ElaVpn) {
+class ElaVpnThread(private val service: ElaVpn) {
 
     private var shouldStop = AtomicBoolean(false)
     private var threadContainer: ThreadContainer? = null
@@ -30,34 +31,32 @@ class ElaVpnThread(val service: ElaVpn) {
         }
 
         shouldStop.set(false)
-//        val tunnel = startBypassTunnel()
         val vpnInterface = startVpnInterface(builder)!!
-//        val thread = threadStart(vpnInterface, tunnel)
         val thread = threadStart(vpnInterface)
 
         thread.setUncaughtExceptionHandler { _, e -> service.errorStop(e.toString()) }
         thread.start()
         threadContainer = ThreadContainer(
-//            tunnel,
             vpnInterface,
             thread
         )
     }
 
     private fun threadStart(vpnInterface: ParcelFileDescriptor): Thread {
-//        private fun threadStart(vpnInterface: ParcelFileDescriptor, bypassTunnel: DatagramChannel): Thread {
         Log.d(TAG, "starting vpn thread")
         return Thread {
+            val input = FileInputStream(vpnInterface.fileDescriptor)
+            val output = FileOutputStream(vpnInterface.fileDescriptor)
+
             val buffer = ByteBuffer.allocate(32767)
             while (!shouldStop.get()) {
                 try {
-                    val stream = FileInputStream(vpnInterface.fileDescriptor)
-                    val size = stream.read(buffer.array())
+                    val size = input.read(buffer.array())
 
                     if (size <= 0) continue // empty packet
 
-                    Log.d(TAG, "got packet $buffer")
-//                    bypassTunnel.write(buffer)
+                    val packet = IpSelector.newPacket(buffer.array(), 0, size) as IpPacket
+                    Log.d(TAG, "got $packet")
                 } catch (e: Exception) {
                     Log.e(TAG, "vpn thread exception $e")
                 } finally {
@@ -67,22 +66,14 @@ class ElaVpnThread(val service: ElaVpn) {
         }
     }
 
-//    private fun startBypassTunnel(): DatagramChannel {
-//        Log.d(TAG, "starting bypass tunnel")
-//        val server = InetSocketAddress("127.0.0.0.1", 5555) // TODO
-//
-//        val tunnel = DatagramChannel.open()
-//        tunnel.configureBlocking(false)
-//        return tunnel
-//    }
-
     private fun startVpnInterface(builder: VpnService.Builder): ParcelFileDescriptor? {
         Log.d(TAG, "starting vpn interface")
-        builder.addAddress("10.0.2.0", 32) // TODO
-        builder.addRoute("0.0.0.0", 0)
-        builder.addDisallowedApplication(BuildConfig.APPLICATION_ID)
-
-        return builder.setSession("ElaVPN")
+        return builder
+            .addAddress("10.0.2.0", 32) // TODO
+            .addRoute("0.0.0.0", 0)
+            .addDisallowedApplication(BuildConfig.APPLICATION_ID)
+            .setBlocking(true)
+            .setSession("ElaVPN")
             .establish()
     }
 
@@ -92,7 +83,6 @@ class ElaVpnThread(val service: ElaVpn) {
         shouldStop.set(true)
 
         val threadContainer = threadContainer ?: return
-//        closeBypassTunnel(threadContainer.bypassTunnel)
         closeThreadOnly(threadContainer.thread)
         closeInterfaceOnly(threadContainer.vpnInterface)
         this.threadContainer = null
@@ -117,9 +107,5 @@ class ElaVpnThread(val service: ElaVpn) {
         } catch (e: Exception) {
             Log.e(TAG, "could not close vpn interface $e")
         }
-    }
-
-    private fun closeBypassTunnel(tunnel: DatagramChannel) {
-        tunnel.close()
     }
 }

@@ -1,4 +1,4 @@
-package me.mendez.ela.ui.screens.suspicious
+package me.mendez.ela.ui.general
 
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -7,11 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SuspiciousTopBar(onReturn: (() -> Unit)?) {
+fun PopBackTopBar(title: String, onReturn: (() -> Unit)?) {
     TopAppBar(
         title = {
             Text(
-                text = "Ajustes",
+                text = title,
                 style = MaterialTheme.typography.h2,
             )
         },
@@ -20,7 +20,7 @@ fun SuspiciousTopBar(onReturn: (() -> Unit)?) {
             if (onReturn == null) return@TopAppBar
 
             IconButton(onClick = onReturn) {
-                Icon(Icons.Filled.ArrowBack, "backIcon")
+                Icon(Icons.Filled.ArrowBack, "regresar")
             }
         }
     )

@@ -1,4 +1,4 @@
-package me.mendez.ela.ui.screens.suspicious
+package me.mendez.ela.ui.screens.suspicious.components
 
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Box

@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import me.mendez.ela.ui.general.PopBackTopBar
+import me.mendez.ela.ui.screens.suspicious.components.SuspiciousApps
 
 
 @Composable
@@ -13,7 +15,7 @@ fun SuspiciousAppsScreen(
 ) {
     Scaffold(
         topBar = {
-            SuspiciousTopBar(onReturn)
+            PopBackTopBar("Aplicaciones sospechosas", onReturn)
         },
         content = {
             SuspiciousApps(

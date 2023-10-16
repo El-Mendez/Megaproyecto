@@ -1,4 +1,4 @@
-package me.mendez.ela.ui.screens.suspicious
+package me.mendez.ela.ui.screens.suspicious.components
 
 import android.content.Intent
 import android.graphics.drawable.Drawable

@@ -5,7 +5,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import me.mendez.ela.model.MessageData
-import me.mendez.ela.ui.screens.chat.components.ChatTopBar
+import me.mendez.ela.ui.general.PopBackTopBar
 import me.mendez.ela.ui.screens.chat.components.InputBar
 import me.mendez.ela.ui.screens.chat.components.MessageList
 
@@ -19,7 +19,7 @@ fun ChatScreen(
 ) {
     Scaffold(
         topBar = {
-            ChatTopBar(onReturn)
+            PopBackTopBar("Ela", onReturn)
         },
         content = {
             MessageList(

@@ -22,7 +22,15 @@ import androidx.compose.ui.unit.dp
 import me.mendez.ela.R
 
 @Composable
-fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit, vpnEnabled: Boolean, enableVpn: () -> Unit) {
+fun MainScreen(
+    onSend: () -> Unit,
+    onSettings: () -> Unit,
+    onDetails: () -> Unit,
+    vpnEnabled: Boolean,
+    enableVpn: () -> Unit,
+    suspiciousAppsAmount: Int,
+    onSuspiciousAppClick: () -> Unit,
+) {
     val image = ImageBitmap.imageResource(R.drawable.background_tile)
     val brush = remember {
         ShaderBrush(
@@ -47,6 +55,13 @@ fun MainScreen(onSend: () -> Unit, onSettings: () -> Unit, onDetails: () -> Unit
                 .fillMaxWidth(),
             score = 128,
         )
+
+        if (suspiciousAppsAmount != 0) {
+            SuspiciousAppsWarning(
+                onSuspiciousAppClick,
+                suspiciousAppsAmount
+            )
+        }
 
         if (!vpnEnabled) {
             DisabledWarning(enableVpn)
@@ -286,7 +301,7 @@ fun EmptyDailyBlocksCard() {
 @Composable
 fun DisabledWarning(onClick: () -> Unit) {
     Card(
-        backgroundColor = Color.Red,
+        backgroundColor = MaterialTheme.colors.secondary,
         modifier = Modifier
             .fillMaxWidth()
             .padding(10.dp)
@@ -295,6 +310,34 @@ fun DisabledWarning(onClick: () -> Unit) {
     ) {
         Text(
             text = "No estás protegido por Ela",
+            style = MaterialTheme.typography.h2,
+            color = MaterialTheme.colors.onSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 20.dp)
+        )
+    }
+}
+
+@Composable
+fun SuspiciousAppsWarning(onClick: () -> Unit, amount: Int) {
+    val name = if (amount == 1) {
+        "Tienes una aplicación sospechosa"
+    } else {
+        "Tienes $amount aplicaciones sospechosas"
+    }
+
+    Card(
+        backgroundColor = Color.Red,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)
+            .clickable { onClick() },
+        elevation = 10.dp,
+    ) {
+        Text(
+            text = name,
             style = MaterialTheme.typography.h2,
             color = Color.White,
             textAlign = TextAlign.Center,

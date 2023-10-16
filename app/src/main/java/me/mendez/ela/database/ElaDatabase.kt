@@ -29,4 +29,9 @@ object DatabaseModule {
             .fallbackToDestructiveMigration()
             .build()
     }
+
+    @Provides
+    fun provideSuspiciousAppDao(database: ElaDatabase): SuspiciousAppDao {
+        return database.suspiciousApps
+    }
 }

@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -14,8 +16,10 @@ import androidx.navigation.compose.rememberNavController
 import me.mendez.ela.settings.ElaSettings
 import me.mendez.ela.ui.theme.ElaTheme
 import dagger.hilt.android.AndroidEntryPoint
+import me.mendez.ela.database.SuspiciousAppDao
 import me.mendez.ela.ui.screens.DailyBlocksScreen
 import me.mendez.ela.ui.screens.MainScreen
+import me.mendez.ela.ui.screens.suspicious.SuspiciousAppsScreen
 import me.mendez.ela.ui.screens.chat.ChatScreen
 import me.mendez.ela.ui.screens.chat.ChatViewModel
 import me.mendez.ela.ui.screens.settings.SettingsScreen
@@ -28,6 +32,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var elaSettingsStore: DataStore<ElaSettings>
 
+    @Inject
+    lateinit var database: SuspiciousAppDao
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -36,6 +43,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val chatViewModel = viewModel<ChatViewModel>()
                 val elaSettings = elaSettingsStore.data.collectAsState(initial = ElaSettings.default()).value
+                val suspiciousApps = database.getAll().collectAsState(initial = emptyList()).value
 
                 val settingsViewModel = viewModel<SettingsViewModel>()
                 val intentContract = rememberLauncherForActivityResult(
@@ -52,6 +60,11 @@ class MainActivity : ComponentActivity() {
                         )
                     })
 
+
+                val data = remember {
+                    mutableStateListOf("me.mendez.ela")
+                }
+
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
                         MainScreen(
@@ -67,6 +80,10 @@ class MainActivity : ComponentActivity() {
                             vpnEnabled = elaSettings.vpnRunning,
                             enableVpn = {
                                 navController.navigate("settings")
+                            },
+                            suspiciousAppsAmount = 1,
+                            onSuspiciousAppClick = {
+                                navController.navigate("app-details")
                             }
                         )
                     }
@@ -100,6 +117,10 @@ class MainActivity : ComponentActivity() {
                         DailyBlocksScreen(
                             onReturn = navController::popBackStack
                         )
+                    }
+
+                    composable("app-details") {
+                        SuspiciousAppsScreen(data, navController::popBackStack)
                     }
                 }
             }

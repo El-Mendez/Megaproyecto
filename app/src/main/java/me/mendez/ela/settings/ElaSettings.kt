@@ -36,6 +36,29 @@ data class ElaSettings(
     }
 }
 
+enum class ActionNeeded {
+    START, STOP, RESTART, NONE
+}
+
+suspend fun DataStore<ElaSettings>.nextAction(transform: suspend (ElaSettings) -> ElaSettings): ActionNeeded {
+    var action = ActionNeeded.NONE
+    updateData {
+        val old = it
+        val updated = transform(old)
+
+        if (old.vpnRunning != updated.vpnRunning) {
+            action = if (updated.vpnRunning) ActionNeeded.START else ActionNeeded.STOP
+        } else if (updated.vpnRunning && old != updated) {
+            action = ActionNeeded.RESTART
+        }
+
+        return@updateData updated
+    }
+
+    this.updateData(transform)
+    return action
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object ElaSettingsModule {

@@ -19,10 +19,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import me.mendez.ela.settings.ActionNeeded
 import me.mendez.ela.settings.ElaSettings
+import me.mendez.ela.settings.nextAction
 import me.mendez.ela.vpn.ElaVpn
 import javax.inject.Inject
-import kotlin.properties.Delegates
 
 private const val TAG = "ELA_SETTINGS"
 
@@ -41,37 +42,25 @@ class SettingsViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                var changeState by Delegates.notNull<Boolean>()
-                var turnOn by Delegates.notNull<Boolean>()
-                var restart by Delegates.notNull<Boolean>()
+                when (dataStore.nextAction(updater)) {
+                    ActionNeeded.START -> {
+                        Log.i(TAG, "attempting to start vpn")
+                        tryActivateVpn(context, stringContract, intentContract)
+                    }
 
-                dataStore.updateData { old ->
-                    val updated = updater(old)
+                    ActionNeeded.STOP -> {
+                        Log.i(TAG, "stopping vpn")
+                        ElaVpn.sendStop(context)
+                    }
 
-                    restart = old.vpnRunning && updated.vpnRunning && old != updated
-                    changeState = old.vpnRunning != updated.vpnRunning
-                    turnOn = updated.vpnRunning
+                    ActionNeeded.RESTART -> {
+                        Log.i(TAG, "changes were made when it was on. Trying to restart service.")
+                        ElaVpn.sendRestart(context)
+                    }
 
-                    updated
-                }
-
-                if (restart) {
-                    Log.i(TAG, "changes were made when it was on. Trying to restart service.")
-                    ElaVpn.sendRestart(context)
-                    return@withContext
-                }
-
-                if (!changeState) {
-                    Log.i(TAG, "changes were made but it was off. Nothing to do.")
-                    return@withContext
-                }
-
-                if (turnOn) {
-                    Log.i(TAG, "attempting to start vpn")
-                    tryActivateVpn(context, stringContract, intentContract)
-                } else {
-                    Log.i(TAG, "stopping vpn")
-                    ElaVpn.sendStop(context)
+                    ActionNeeded.NONE -> {
+                        Log.i(TAG, "changes were made but it was off. Nothing to do.")
+                    }
                 }
             }
         }

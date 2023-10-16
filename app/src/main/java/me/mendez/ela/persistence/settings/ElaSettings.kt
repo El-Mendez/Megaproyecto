@@ -24,6 +24,7 @@ data class ElaSettings(
     val vpnRunning: Boolean,
     val startOnBoot: Boolean,
     val blockDefault: Boolean,
+    val domains: List<String>,
 ) {
     companion object {
         fun default(): ElaSettings {
@@ -31,6 +32,7 @@ data class ElaSettings(
                 vpnRunning = false,
                 blockDefault = true,
                 startOnBoot = false,
+                domains = emptyList(),
             )
         }
     }

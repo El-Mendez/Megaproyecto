@@ -10,6 +10,7 @@ fun Settings(
     modifier: Modifier = Modifier,
     settings: ElaSettings,
     update: ((ElaSettings) -> ElaSettings) -> Unit,
+    onAddDomains: () -> Unit,
 ) {
 
     Column(modifier) {
@@ -34,6 +35,17 @@ fun Settings(
                     old.copy(blockDefault = it)
                 }
             },
+        )
+        GenericSetting(
+            title = "Dominios Permitidos",
+            text = if (settings.blockDefault) {
+                "Páginas que nunca serán bloqueadas"
+            } else {
+                "Páginas que nunca darán advertencia"
+            },
+            onClick = onAddDomains,
+//            isEnabled = settings.vpnRunning, TODO
+            isEnabled = true,
         )
     }
 }

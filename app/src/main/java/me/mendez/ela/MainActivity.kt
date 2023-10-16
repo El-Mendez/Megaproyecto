@@ -22,7 +22,7 @@ import me.mendez.ela.ui.screens.MainScreen
 import me.mendez.ela.ui.screens.suspicious.SuspiciousAppsScreen
 import me.mendez.ela.ui.screens.chat.ChatScreen
 import me.mendez.ela.ui.screens.chat.ChatViewModel
-import me.mendez.ela.ui.screens.settings.SettingsScreen
+import me.mendez.ela.ui.screens.settings.SettingsNestedGraph
 import me.mendez.ela.ui.screens.settings.SettingsViewModel
 import javax.inject.Inject
 
@@ -46,17 +46,17 @@ class MainActivity : ComponentActivity() {
                 val suspiciousApps = database.getAll().collectAsState(initial = emptyList()).value
 
                 val settingsViewModel = viewModel<SettingsViewModel>()
-                val intentContract = rememberLauncherForActivityResult(
+                val startActivityForResultContract = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.StartActivityForResult(),
                     onResult = { settingsViewModel.onVpnPermissionResponse(it, this@MainActivity) }
                 )
-                val stringContract = rememberLauncherForActivityResult(
+                val askPermissionContract = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission(),
                     onResult = {
                         settingsViewModel.onNotificationPermissionResponse(
                             it,
                             this@MainActivity,
-                            intentContract
+                            startActivityForResultContract
                         )
                     })
 
@@ -95,15 +95,15 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("settings") {
-                        SettingsScreen(
+                        SettingsNestedGraph(
                             onReturn = navController::popBackStack,
                             settings = settingsViewModel.state.collectAsState(initial = ElaSettings.default()).value,
                             update = {
                                 settingsViewModel.updateSettings(
                                     it,
                                     this@MainActivity,
-                                    stringContract,
-                                    intentContract
+                                    askPermissionContract,
+                                    startActivityForResultContract
                                 )
                             }
                         )

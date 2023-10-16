@@ -6,25 +6,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.ui.general.PopBackTopBar
-import me.mendez.ela.ui.screens.settings.components.Settings
+import me.mendez.ela.ui.screens.settings.components.DomainsList
 
 @Composable
-fun SettingsScreen(
-    onReturn: (() -> Unit)?,
+fun AddDomainsScreen(
+    onReturn: (() -> Unit),
     settings: ElaSettings,
     update: ((ElaSettings) -> ElaSettings) -> Unit,
-    onAddDomains: () -> Unit,
 ) {
     Scaffold(
         topBar = {
-            PopBackTopBar("Ajustes", onReturn)
+            PopBackTopBar("Dominios Permitidos", onReturn)
         },
         content = {
-            Settings(
+            DomainsList(
                 modifier = Modifier.padding(it),
-                settings,
-                update,
-                onAddDomains,
+//                domains = settings.domains, TODO
+                domains = listOf("google.com", "duckduckgo.com"),
+                onUpdate = { newDomains ->
+                    update {
+                        it.copy(domains = newDomains)
+                    }
+                },
             )
         }
     )

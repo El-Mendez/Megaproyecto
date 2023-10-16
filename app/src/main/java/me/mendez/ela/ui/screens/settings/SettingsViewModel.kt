@@ -37,15 +37,15 @@ class SettingsViewModel @Inject constructor(
     fun updateSettings(
         updater: (ElaSettings) -> ElaSettings,
         context: Context,
-        stringContract: ActivityResultLauncher<String>,
-        intentContract: ActivityResultLauncher<Intent>
+        askPermissionContract: ActivityResultLauncher<String>,
+        startActivityForResultContract: ActivityResultLauncher<Intent>
     ) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 when (dataStore.nextAction(updater)) {
                     ActionNeeded.START -> {
                         Log.i(TAG, "attempting to start vpn")
-                        tryActivateVpn(context, stringContract, intentContract)
+                        tryActivateVpn(context, askPermissionContract, startActivityForResultContract)
                     }
 
                     ActionNeeded.STOP -> {
@@ -68,24 +68,24 @@ class SettingsViewModel @Inject constructor(
 
     private fun tryActivateVpn(
         context: Context,
-        stringContract: ActivityResultLauncher<String>,
-        intentContract: ActivityResultLauncher<Intent>
+        askPermissionContract: ActivityResultLauncher<String>,
+        startActivityForResultContract: ActivityResultLauncher<Intent>
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (notificationPermission(context) != PackageManager.PERMISSION_GRANTED) {
                 Log.i(TAG, "We don't have notifications permissions yet! Waiting for user to accept them.")
-                askForNotificationPermissions(stringContract)
+                askForNotificationPermissions(askPermissionContract)
                 return
             }
         }
 
-        onNotificationPermissionResponse(true, context, intentContract)
+        onNotificationPermissionResponse(true, context, startActivityForResultContract)
     }
 
     fun onNotificationPermissionResponse(
         allowed: Boolean,
         context: Context,
-        intentContract: ActivityResultLauncher<Intent>
+        startActivityForResultContract: ActivityResultLauncher<Intent>
     ) {
         if (!allowed) {
             Log.i(TAG, "User rejected notification permissions. Cancel trying to turn on VPN")
@@ -98,7 +98,7 @@ class SettingsViewModel @Inject constructor(
         val status = VpnService.prepare(context)
         if (status != null) {
             Log.i(TAG, "User hasn't approved the VPN use yet. Wait for their confirmation.")
-            askForVpnPermission(intentContract, status)
+            askForVpnPermission(startActivityForResultContract, status)
             return
         }
 

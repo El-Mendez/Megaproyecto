@@ -7,7 +7,7 @@ import androidx.datastore.core.DataStore
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import me.mendez.ela.settings.ElaSettings
+import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.vpn.ElaVpn
 import javax.inject.Inject
 

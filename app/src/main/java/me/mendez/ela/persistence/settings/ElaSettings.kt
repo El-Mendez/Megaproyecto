@@ -1,4 +1,4 @@
-package me.mendez.ela.settings
+package me.mendez.ela.persistence.settings
 
 import android.content.Context
 import android.util.Log

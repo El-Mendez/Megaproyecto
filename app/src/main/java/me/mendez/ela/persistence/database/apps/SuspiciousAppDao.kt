@@ -1,4 +1,4 @@
-package me.mendez.ela.database
+package me.mendez.ela.persistence.database.apps
 
 import android.content.pm.PackageInfo
 import androidx.room.*

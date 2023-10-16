@@ -3,7 +3,7 @@ package me.mendez.ela.ui.screens.settings.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import me.mendez.ela.settings.ElaSettings
+import me.mendez.ela.persistence.settings.ElaSettings
 
 @Composable
 fun Settings(
@@ -37,4 +37,3 @@ fun Settings(
         )
     }
 }
-

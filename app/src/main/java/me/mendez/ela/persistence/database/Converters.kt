@@ -1,4 +1,4 @@
-package me.mendez.ela.database
+package me.mendez.ela.persistence.database
 
 import androidx.room.TypeConverter
 import java.util.*

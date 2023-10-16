@@ -1,4 +1,4 @@
-package me.mendez.ela.database
+package me.mendez.ela.persistence.database
 
 import android.app.Application
 import androidx.room.Database
@@ -9,6 +9,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import me.mendez.ela.persistence.database.apps.SuspiciousApp
+import me.mendez.ela.persistence.database.apps.SuspiciousAppDao
 
 @Database(
     entities = [SuspiciousApp::class],

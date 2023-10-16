@@ -1,4 +1,4 @@
-package me.mendez.ela.database
+package me.mendez.ela.persistence.database.apps
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

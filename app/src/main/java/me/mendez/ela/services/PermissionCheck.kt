@@ -9,7 +9,7 @@ import android.content.pm.PackageManager
 import androidx.room.Room
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import me.mendez.ela.database.ElaDatabase
+import me.mendez.ela.persistence.database.ElaDatabase
 import me.mendez.ela.notifications.SuspiciousAppChannel
 
 class PermissionCheck : BroadcastReceiver() {

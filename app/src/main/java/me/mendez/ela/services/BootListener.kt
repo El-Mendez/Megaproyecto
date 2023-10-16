@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import kotlinx.coroutines.runBlocking
-import me.mendez.ela.settings.ElaSettings
-import me.mendez.ela.settings.ElaSettingsModule
+import me.mendez.ela.persistence.settings.ElaSettings
+import me.mendez.ela.persistence.settings.ElaSettingsModule
 import me.mendez.ela.vpn.ElaVpn
 
 private const val TAG = "ELA_BOOT"

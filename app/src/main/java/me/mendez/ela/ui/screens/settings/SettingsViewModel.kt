@@ -19,9 +19,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.mendez.ela.settings.ActionNeeded
-import me.mendez.ela.settings.ElaSettings
-import me.mendez.ela.settings.nextAction
+import me.mendez.ela.persistence.settings.ActionNeeded
+import me.mendez.ela.persistence.settings.ElaSettings
+import me.mendez.ela.persistence.settings.nextAction
 import me.mendez.ela.vpn.ElaVpn
 import javax.inject.Inject
 

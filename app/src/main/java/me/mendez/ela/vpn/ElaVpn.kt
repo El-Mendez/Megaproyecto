@@ -12,7 +12,7 @@ import androidx.datastore.core.DataStore
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import me.mendez.ela.notifications.VpnChannel
-import me.mendez.ela.settings.ElaSettings
+import me.mendez.ela.persistence.settings.ElaSettings
 import javax.inject.Inject
 
 private const val TAG = "VPN"

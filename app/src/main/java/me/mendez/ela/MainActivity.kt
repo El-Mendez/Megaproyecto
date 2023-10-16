@@ -13,10 +13,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import me.mendez.ela.settings.ElaSettings
+import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.ui.theme.ElaTheme
 import dagger.hilt.android.AndroidEntryPoint
-import me.mendez.ela.database.SuspiciousAppDao
+import me.mendez.ela.persistence.database.apps.SuspiciousAppDao
 import me.mendez.ela.ui.screens.DailyBlocksScreen
 import me.mendez.ela.ui.screens.MainScreen
 import me.mendez.ela.ui.screens.suspicious.SuspiciousAppsScreen

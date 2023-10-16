@@ -22,6 +22,7 @@ import me.mendez.ela.ui.screens.settings.SettingsScreen
 import me.mendez.ela.ui.screens.settings.SettingsViewModel
 import javax.inject.Inject
 
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
@@ -105,5 +106,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-

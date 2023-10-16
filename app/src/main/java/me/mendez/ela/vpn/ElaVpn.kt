@@ -7,8 +7,6 @@ import android.content.pm.PackageManager
 import android.net.VpnService
 import android.os.Build
 import android.util.Log
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import dagger.hilt.android.AndroidEntryPoint
@@ -124,18 +122,11 @@ class ElaVpn : VpnService() {
     fun errorStop(reason: String) {
         Log.e(TAG, reason)
 
-        with(NotificationManagerCompat.from(this)) {
-            if (ActivityCompat.checkSelfPermission(
-                    this@ElaVpn,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                notify(
-                    VpnChannel.ERROR_ID,
-                    VpnChannel.errorNotification(this@ElaVpn),
-                )
-            }
-        }
+        VpnChannel.notify(
+            this@ElaVpn,
+            VpnChannel.ERROR_ID,
+            VpnChannel.errorNotification(this@ElaVpn),
+        )
 
         try {
             vpnThread.stop()

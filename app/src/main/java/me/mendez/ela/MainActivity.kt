@@ -6,7 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -61,10 +61,6 @@ class MainActivity : ComponentActivity() {
                     })
 
 
-                val data = remember {
-                    mutableStateListOf("me.mendez.ela")
-                }
-
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
                         MainScreen(
@@ -81,7 +77,7 @@ class MainActivity : ComponentActivity() {
                             enableVpn = {
                                 navController.navigate("settings")
                             },
-                            suspiciousAppsAmount = 1,
+                            suspiciousAppsAmount = suspiciousApps.size,
                             onSuspiciousAppClick = {
                                 navController.navigate("app-details")
                             }
@@ -120,7 +116,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("app-details") {
-                        SuspiciousAppsScreen(data, navController::popBackStack)
+                        SuspiciousAppsScreen(
+                            remember { derivedStateOf { suspiciousApps.map { it.packageName } } }.value,
+                            navController::popBackStack
+                        )
                     }
                 }
             }

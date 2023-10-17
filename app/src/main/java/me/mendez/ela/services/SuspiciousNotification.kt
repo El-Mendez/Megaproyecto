@@ -6,6 +6,6 @@ import android.content.Intent
 
 class SuspiciousNotification : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        TODO("Not yet implemented")
+        println("faaaaa") // TODO
     }
 }

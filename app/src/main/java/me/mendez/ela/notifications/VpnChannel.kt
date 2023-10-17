@@ -7,30 +7,35 @@ import android.graphics.Color
 import androidx.core.app.NotificationCompat
 import me.mendez.ela.R
 
-object VpnChannel : BaseNotificationChannel() {
+object VpnChannel : BaseNotificationChannel<VpnChannel.NotificationCreator>() {
     override val CHANNEL_ID = "vpn_traffic"
     override val IMPORTANCE = NotificationManager.IMPORTANCE_LOW
     override val NAME = "VPN"
     const val FOREGROUND_ID = 1
     const val ERROR_ID = 2
 
-    fun runningNotification(context: Context): Notification {
-        return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.logo_24)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setContentText("Supervisando tráfico red")
-            .setOngoing(true)
-            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .build()
+    public override fun createNotification(context: Context): NotificationCreator = NotificationCreator(context)
+
+    class NotificationCreator(val context: Context) {
+        fun runningNotification(): Notification {
+            return NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.logo_24)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentText("Supervisando tráfico red")
+                .setOngoing(true)
+                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+                .build()
+        }
+
+        fun errorNotification(): Notification {
+            return NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.logo_24)
+                .setColor(Color.RED)
+                .setContentTitle("Ela")
+                .setContentText("No se pudo iniciar Ela")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .build()
+        }
     }
 
-    fun errorNotification(context: Context): Notification {
-        return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.logo_24)
-            .setColor(Color.RED)
-            .setContentTitle("Ela")
-            .setContentText("No se pudo iniciar Ela")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-    }
 }

@@ -15,8 +15,9 @@ class DailyTip : BroadcastReceiver() {
         DailyTipChannel.notify(
             context,
             DailyTipChannel.TIP_ID,
-            DailyTipChannel.newDailyTip(context, "¡hola mundo!")
-        )
+        ) {
+            newDailyTip("¡Hola mundo!")
+        }
     }
 
     companion object {

@@ -11,7 +11,7 @@ abstract class BaseNotificationGroup {
     protected abstract val GROUP_ID: String
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun createChannel(context: Context, channels: List<BaseNotificationChannel>) {
+    fun createChannel(context: Context, channels: List<BaseNotificationChannel<out Any?>>) {
         val group = NotificationChannelGroup(GROUP_ID, NAME)
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

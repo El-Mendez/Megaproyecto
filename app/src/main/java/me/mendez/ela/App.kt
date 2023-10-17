@@ -15,9 +15,10 @@ class App : Application() {
 
         SuspiciousTrafficChannel.notify(
             this,
-            1,
-            SuspiciousTrafficChannel.newSuspiciousTraffic(this@App, "google.com")
-        )
+            1
+        ) {
+            newSuspiciousTraffic("google.com")
+        }
     }
 
     private fun createNotificationChannel() {

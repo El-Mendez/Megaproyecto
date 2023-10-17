@@ -11,10 +11,12 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 
-abstract class BaseNotificationChannel {
+abstract class BaseNotificationChannel<T> {
     protected abstract val NAME: String
     protected abstract val CHANNEL_ID: String
     protected abstract val IMPORTANCE: Int
+
+    protected abstract fun createNotification(context: Context): T
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun createChannel(context: Context, group: String? = null) {
@@ -32,7 +34,7 @@ abstract class BaseNotificationChannel {
         notificationManager.createNotificationChannel(channel)
     }
 
-    fun notify(context: Context, notificationId: Int, notification: Notification) {
+    fun notify(context: Context, notificationId: Int, block: T.() -> Notification) {
         with(NotificationManagerCompat.from(context)) {
             if (ActivityCompat.checkSelfPermission(
                     context,
@@ -41,7 +43,7 @@ abstract class BaseNotificationChannel {
             ) {
                 notify(
                     notificationId,
-                    notification,
+                    block(createNotification(context))
                 )
             }
         }

@@ -88,7 +88,9 @@ class ElaVpn : VpnService() {
 
         startForeground(
             VpnChannel.FOREGROUND_ID,
-            VpnChannel.runningNotification(this)
+            VpnChannel
+                .createNotification(this)
+                .runningNotification()
         )
 
         vpnThread.start(Builder())
@@ -125,8 +127,9 @@ class ElaVpn : VpnService() {
         VpnChannel.notify(
             this@ElaVpn,
             VpnChannel.ERROR_ID,
-            VpnChannel.errorNotification(this@ElaVpn),
-        )
+        ) {
+            errorNotification()
+        }
 
         try {
             vpnThread.stop()

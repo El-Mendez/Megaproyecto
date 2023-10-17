@@ -39,8 +39,9 @@ class PermissionCheck : BroadcastReceiver() {
             SuspiciousAppChannel.notify(
                 context,
                 SuspiciousAppChannel.SUSPICIOUS_APP_ID,
-                SuspiciousAppChannel.newSuspiciousApp(context, newForbidden),
-            )
+            ) {
+                newSuspiciousApp(newForbidden)
+            }
         }
     }
 

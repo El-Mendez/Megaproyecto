@@ -21,8 +21,7 @@ fun AddDomainsScreen(
         content = {
             DomainsList(
                 modifier = Modifier.padding(it),
-//                domains = settings.domains, TODO
-                domains = listOf("google.com", "duckduckgo.com"),
+                domains = settings.domains,
                 onUpdate = { newDomains ->
                     update {
                         it.copy(domains = newDomains)

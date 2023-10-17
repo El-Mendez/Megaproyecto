@@ -3,10 +3,7 @@ package me.mendez.ela
 import android.app.Application
 import android.os.Build
 import dagger.hilt.android.HiltAndroidApp
-import me.mendez.ela.notifications.DailyTipChannel
-import me.mendez.ela.notifications.SuspiciousAppChannel
-import me.mendez.ela.notifications.SuspiciousTrafficChannel
-import me.mendez.ela.notifications.VpnChannel
+import me.mendez.ela.notifications.*
 import me.mendez.ela.services.DailyTip
 
 @HiltAndroidApp
@@ -15,14 +12,26 @@ class App : Application() {
         super.onCreate()
         createDailyTip()
         createNotificationChannel()
+
+        SuspiciousTrafficChannel.notify(
+            this,
+            1,
+            SuspiciousTrafficChannel.newSuspiciousTraffic(this@App, "google.com")
+        )
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            SuspiciousAppChannel.createChannel(this)
-            SuspiciousTrafficChannel.createChannel(this)
+            SuspiciousGroup.createChannel(
+                this,
+                listOf(
+                    SuspiciousTrafficChannel,
+                    SuspiciousAppChannel,
+                )
+            )
             VpnChannel.createChannel(this)
             DailyTipChannel.createChannel(this)
+
         }
     }
 

@@ -44,7 +44,6 @@ fun Settings(
                 "Páginas que nunca darán advertencia"
             },
             onClick = onAddDomains,
-//            isEnabled = settings.vpnRunning, TODO
             isEnabled = true,
         )
     }

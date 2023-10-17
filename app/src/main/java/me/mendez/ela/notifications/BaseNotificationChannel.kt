@@ -17,12 +17,16 @@ abstract class BaseNotificationChannel {
     protected abstract val IMPORTANCE: Int
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun createChannel(context: Context) {
+    fun createChannel(context: Context, group: String? = null) {
         val channel = NotificationChannel(
             CHANNEL_ID,
             NAME,
             IMPORTANCE,
         )
+
+        if (group != null) {
+            channel.group = group
+        }
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)

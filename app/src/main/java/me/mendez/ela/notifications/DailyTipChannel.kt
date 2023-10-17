@@ -9,7 +9,7 @@ import me.mendez.ela.R
 
 object DailyTipChannel : BaseNotificationChannel() {
     override val CHANNEL_ID = "daily_tip"
-    override val IMPORTANCE = NotificationManager.IMPORTANCE_HIGH
+    override val IMPORTANCE = NotificationManager.IMPORTANCE_LOW
     override val NAME = "Consejo Diario de Ciberseguridad"
     val TIP_ID = 4
 

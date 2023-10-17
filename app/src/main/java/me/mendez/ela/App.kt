@@ -15,7 +15,7 @@ class App : Application() {
 
         SuspiciousTrafficChannel.notify(
             this,
-            1
+            "google.com".hashCode()
         ) {
             newSuspiciousTraffic("google.com")
         }

@@ -27,10 +27,17 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
         .setImportant(true)
         .build()
 
+    fun replyActionHash(domain: String): Int = ":replyAction:${domain}".hashCode()
+
+    fun whitelistActionHash(domain: String): Int = ":whitelistAction:${domain}".hashCode()
+
+    fun dismissNotificationHash(domain: String): Int = ":dismissNotification:${domain}".hashCode()
+
     override fun createNotification(context: Context): NotificationCreator = NotificationCreator(context)
 
+
     class NotificationCreator(val context: Context) {
-        private fun createReplyAction(): NotificationCompat.Action {
+        private fun createReplyAction(domain: String): NotificationCompat.Action {
             val remoteInput = RemoteInput
                 .Builder("reply_ela_traffic")
                 .setLabel("Escribe aquí...")
@@ -39,8 +46,11 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
             val replyPendingIntent = PendingIntent
                 .getBroadcast(
                     context,
-                    333,
-                    Intent(context, SuspiciousNotification::class.java),
+                    replyActionHash(domain),
+                    Intent(context, SuspiciousNotification::class.java).apply {
+                        putExtra("domain", domain)
+                        putExtra("action", "reply")
+                    },
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                 )
 
@@ -54,17 +64,52 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                 .build()
         }
 
-        fun newSuspiciousTraffic(app: String): Notification {
+        private fun createAddToWhitelistAction(domain: String): NotificationCompat.Action {
+            val allowPendingIntent = PendingIntent
+                .getBroadcast(
+                    context,
+                    whitelistActionHash(domain),
+                    Intent(context, SuspiciousNotification::class.java).apply {
+                        putExtra("domain", domain)
+                        putExtra("action", "whitelist")
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
 
+            return NotificationCompat.Action
+                .Builder(
+                    R.drawable.baseline_gpp_good_24,
+                    "Permitir",
+                    allowPendingIntent,
+                ).build()
+        }
+
+        private fun createDismissIntent(domain: String): PendingIntent {
+            return PendingIntent
+                .getBroadcast(
+                    context,
+                    dismissNotificationHash(domain),
+                    Intent(context, SuspiciousNotification::class.java).apply {
+                        putExtra("domain", domain)
+                        putExtra("action", "dismiss")
+                    },
+                    PendingIntent.FLAG_IMMUTABLE,
+                )
+        }
+
+        fun newSuspiciousTraffic(domain: String): Notification {
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.logo_24)
                 .setStyle(
                     NotificationCompat
                         .MessagingStyle(ela)
+                        .setConversationTitle(domain)
                         .addMessage("what what what", Date().time, ela)
                         .addMessage("no u", Date().time, you)
                 )
-                .addAction(createReplyAction())
+                .addAction(createReplyAction(domain))
+                .addAction(createAddToWhitelistAction(domain))
+                .setDeleteIntent(createDismissIntent(domain))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .build()
         }

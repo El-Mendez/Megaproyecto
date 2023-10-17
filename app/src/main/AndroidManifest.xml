@@ -46,6 +46,8 @@
 
         <receiver android:name=".services.DailyTip"/>
 
+        <receiver android:name=".services.SuspiciousNotification"/>
+
         <service android:name=".vpn.ElaVpn" android:process=":vpn"
                  android:permission="android.permission.BIND_VPN_SERVICE"/>
 

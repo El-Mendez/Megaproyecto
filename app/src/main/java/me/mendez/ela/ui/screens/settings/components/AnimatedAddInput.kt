@@ -30,6 +30,7 @@ fun getHost(url: String): String? {
             .split("@", limit = 2).last()
             .split("/", limit = 2).first()
             .split(":", limit = 2).first()
+            .lowercase()
     }
     return null
 }

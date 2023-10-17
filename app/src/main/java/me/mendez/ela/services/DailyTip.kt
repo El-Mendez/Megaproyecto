@@ -24,7 +24,6 @@ class DailyTip : BroadcastReceiver() {
 
         fun scheduleNotifications(context: Context) {
             val alarmManager = context.getSystemService(AlarmManager::class.java)
-            val intent = Intent(context, DailyTip::class.java)
 
             val nextMidday = Calendar.getInstance().apply {
                 if (get(Calendar.HOUR_OF_DAY) >= 12) {
@@ -45,7 +44,7 @@ class DailyTip : BroadcastReceiver() {
                 PendingIntent.getBroadcast(
                     context,
                     ALARM_REQUEST_CODE,
-                    intent,
+                    Intent(context, DailyTip::class.java),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 ),
             )

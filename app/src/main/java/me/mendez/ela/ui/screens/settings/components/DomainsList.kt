@@ -17,17 +17,15 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DomainsList(modifier: Modifier, domains: List<String>, onUpdate: (List<String>) -> Unit) {
+fun DomainsList(
+    modifier: Modifier,
+    domains: List<String>,
+    showSave: Boolean,
+    onSave: () -> Unit,
+    onAdd: (String) -> Unit,
+    onDelete: (Int) -> Unit,
+) {
     val lazyListState = rememberLazyListState()
-    val currentDomains = remember(domains) {
-        mutableStateListOf(*domains.toTypedArray())
-    }
-
-    val changed by remember(domains) {
-        derivedStateOf {
-            currentDomains.size != domains.size || !currentDomains.containsAll(domains)
-        }
-    }
 
     Box(
         contentAlignment = Alignment.BottomEnd,
@@ -40,14 +38,14 @@ fun DomainsList(modifier: Modifier, domains: List<String>, onUpdate: (List<Strin
                 .padding(horizontal = 20.dp)
         ) {
             itemsIndexed(
-                items = currentDomains,
+                items = domains,
                 key = { _, item -> item.hashCode() }
             ) { index, domain ->
                 DomainBlock(
                     domain,
                     index != 0,
                     onDelete = {
-                        currentDomains.removeAt(index)
+                        onDelete(index)
                     },
                     modifier = Modifier.animateItemPlacement()
                 )
@@ -68,7 +66,7 @@ fun DomainsList(modifier: Modifier, domains: List<String>, onUpdate: (List<Strin
             horizontalAlignment = Alignment.End,
         ) {
             AnimatedVisibility(
-                changed,
+                showSave,
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
@@ -77,7 +75,7 @@ fun DomainsList(modifier: Modifier, domains: List<String>, onUpdate: (List<Strin
                     contentColor = MaterialTheme.colors.onPrimary,
                     modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
                     onClick = {
-                        onUpdate(currentDomains.toList())
+                        onSave()
                     },
                     shape = RoundedCornerShape(15.dp),
                 ) {
@@ -85,12 +83,7 @@ fun DomainsList(modifier: Modifier, domains: List<String>, onUpdate: (List<Strin
                 }
             }
 
-            AnimatedAddInput {
-                if (!currentDomains.contains(it)) {
-                    currentDomains.add(it)
-                    currentDomains.sort()
-                }
-            }
+            AnimatedAddInput { onAdd(it) }
 
         }
     }

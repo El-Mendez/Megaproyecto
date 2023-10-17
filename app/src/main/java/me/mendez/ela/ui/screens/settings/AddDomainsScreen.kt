@@ -1,5 +1,6 @@
 package me.mendez.ela.ui.screens.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -14,19 +15,94 @@ fun AddDomainsScreen(
     settings: ElaSettings,
     update: ((ElaSettings) -> ElaSettings) -> Unit,
 ) {
+    var currentDomains: List<String> by remember(settings.domains) {
+        mutableStateOf(settings.domains.toMutableList())
+    }
+
+    val changed by remember(settings.domains) {
+        derivedStateOf {
+            currentDomains.size != settings.domains.size || !currentDomains.containsAll(settings.domains)
+        }
+    }
+
+    var alertOpened by remember {
+        mutableStateOf(false)
+    }
+
+    val tryReturn = {
+        if (changed && !alertOpened) {
+            alertOpened = true
+        } else {
+            onReturn()
+        }
+    }
+
+    BackHandler(onBack = tryReturn)
+
+    if (alertOpened) {
+        AlertDialog(
+            onDismissRequest = { alertOpened = false },
+            title = {
+                Text(text = "¿Estás seguro?")
+            },
+            text = {
+                Text(text = "Perderás todos tus cambios")
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(
+                        onClick = { alertOpened = false }
+                    ) {
+                        Text(text = "Cancelar")
+                    }
+                    TextButton(
+                        onClick = { onReturn() }
+                    ) {
+                        Text(text = "Ok")
+                    }
+                }
+            }
+
+        )
+    }
+
     Scaffold(
         topBar = {
-            PopBackTopBar("Dominios Permitidos", onReturn)
+            PopBackTopBar("Dominios Permitidos", tryReturn)
         },
         content = {
             DomainsList(
                 modifier = Modifier.padding(it),
-                domains = settings.domains,
-                onUpdate = { newDomains ->
-                    update {
-                        it.copy(domains = newDomains)
+                domains = currentDomains,
+                showSave = changed,
+                onSave = {
+                    if (changed) {
+                        update { old ->
+                            old.copy(domains = currentDomains.toMutableList())
+                        }
                     }
                 },
+                onAdd = { newDomain ->
+                    if (!currentDomains.contains(newDomain)) {
+                        currentDomains = currentDomains
+                            .toMutableList()
+                            .apply {
+                                add(newDomain)
+                                sort()
+                            }
+                    }
+                },
+                onDelete = {
+                    currentDomains = currentDomains
+                        .toMutableList()
+                        .apply {
+                            removeAt(it)
+                        }
+                }
             )
         }
     )

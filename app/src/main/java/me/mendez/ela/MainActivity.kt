@@ -80,7 +80,8 @@ class MainActivity : ComponentActivity() {
                             suspiciousAppsAmount = suspiciousApps.size,
                             onSuspiciousAppClick = {
                                 navController.navigate("app-details")
-                            }
+                            },
+                            blocks = 100,
                         )
                     }
 
@@ -90,7 +91,6 @@ class MainActivity : ComponentActivity() {
                             chatViewModel.calculatingResponse.value,
                             onSubmit = chatViewModel::sendMessage,
                             onReturn = navController::popBackStack
-
                         )
                     }
 
@@ -126,3 +126,5 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+

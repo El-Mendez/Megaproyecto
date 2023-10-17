@@ -30,6 +30,7 @@ fun MainScreen(
     enableVpn: () -> Unit,
     suspiciousAppsAmount: Int,
     onSuspiciousAppClick: () -> Unit,
+    blocks: Int,
 ) {
     val image = ImageBitmap.imageResource(R.drawable.background_tile)
     val brush = remember {
@@ -53,7 +54,7 @@ fun MainScreen(
             modifier = Modifier
                 .height(180.dp)
                 .fillMaxWidth(),
-            score = 128,
+            blocks = blocks,
         )
 
         if (suspiciousAppsAmount != 0) {
@@ -76,7 +77,7 @@ fun MainScreen(
 }
 
 @Composable
-fun Score(score: Int, modifier: Modifier = Modifier) {
+fun Score(blocks: Int, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,
@@ -84,7 +85,7 @@ fun Score(score: Int, modifier: Modifier = Modifier) {
 
         var animationStarted by remember { mutableStateOf(false) }
         val animatedScore by animateIntAsState(
-            targetValue = if (animationStarted) score else 0,
+            targetValue = if (animationStarted) blocks else 0,
             animationSpec = tween(5000), label = "score animation"
         )
 
@@ -108,7 +109,7 @@ fun Score(score: Int, modifier: Modifier = Modifier) {
                 )
             )
             Text(
-                "Tu puntaje de hábitos de Seguridad",
+                "veces que Ela te ha protegido",
                 style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.onBackground)
             )
         }

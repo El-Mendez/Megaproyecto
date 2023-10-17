@@ -8,12 +8,12 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import me.mendez.ela.R
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -79,7 +79,11 @@ fun DomainsList(
                     },
                     shape = RoundedCornerShape(15.dp),
                 ) {
-                    Icon(Icons.Filled.Done, "guardar cambios")
+                    Icon(
+                        painter = painterResource(id = R.drawable.save_24),
+                        contentDescription = "dudas",
+                        tint = MaterialTheme.colors.onPrimary,
+                    )
                 }
             }
 

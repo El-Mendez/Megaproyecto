@@ -29,6 +29,15 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".BubbleActivity"
+            android:theme="@style/Theme.Ela"
+            android:label="Burbujas"
+            android:allowEmbedded="true"
+            android:resizeableActivity="true"
+            android:documentLaunchMode="always"
+        />
+
         <receiver android:name=".services.BootListener" android:exported="true" android:process=":boot">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>

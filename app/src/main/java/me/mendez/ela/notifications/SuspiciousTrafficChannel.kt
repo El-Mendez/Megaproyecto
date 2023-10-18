@@ -6,6 +6,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.*
+import androidx.core.graphics.drawable.IconCompat
+import me.mendez.ela.BubbleActivity
 import me.mendez.ela.R
 import me.mendez.ela.services.SuspiciousNotification
 import java.util.Date
@@ -66,6 +68,8 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
 
     fun dismissNotificationHash(domain: String): Int = ":dismissNotification:${domain}".hashCode()
 
+    fun bubbleNotificationHash(domain: String): Int = ":bubble:${domain}".hashCode()
+
     override fun createNotification(context: Context): NotificationCreator = NotificationCreator(context)
 
     class NotificationCreator(val context: Context) {
@@ -120,6 +124,17 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                 )
         }
 
+        private fun createBubbleIntent(domain: String): PendingIntent {
+            return PendingIntent
+                .getActivity(
+                    context,
+                    bubbleNotificationHash(domain),
+                    Intent(context, BubbleActivity::class.java)
+                        .setAction(Intent.ACTION_VIEW),
+                    PendingIntent.FLAG_MUTABLE,
+                )
+        }
+
         private fun createNewChatConversation(domain: String): NotificationCompat.MessagingStyle {
             return NotificationCompat
                 .MessagingStyle(ela)
@@ -139,12 +154,20 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
             domain: String,
             messages: NotificationCompat.MessagingStyle,
         ): Notification {
+            val bubbleMetadata = NotificationCompat.BubbleMetadata
+                .Builder(
+                    createBubbleIntent(domain),
+                    IconCompat.createWithResource(context, R.drawable.logo_24)
+                ).setDesiredHeight(600)
+                .build()
+
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.logo_24)
                 .setStyle(messages)
                 .addAction(createReplyAction(domain))
                 .addAction(createAddToWhitelistAction(domain))
                 .setDeleteIntent(createDismissIntent(domain))
+                .setBubbleMetadata(bubbleMetadata)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .build()
         }

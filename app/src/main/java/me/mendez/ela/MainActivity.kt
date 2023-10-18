@@ -87,6 +87,7 @@ class MainActivity : ComponentActivity() {
 
                     composable("chat") {
                         ChatScreen(
+                            "Ela",
                             chatViewModel.messages,
                             chatViewModel.calculatingResponse.value,
                             onSubmit = chatViewModel::sendMessage,
@@ -126,5 +127,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-

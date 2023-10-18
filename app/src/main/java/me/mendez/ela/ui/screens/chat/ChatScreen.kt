@@ -12,6 +12,7 @@ import me.mendez.ela.ui.screens.chat.components.MessageList
 
 @Composable
 fun ChatScreen(
+    chatName: String,
     messages: List<MessageData>,
     calculatingResponse: Boolean,
     onSubmit: (String) -> Unit,
@@ -19,7 +20,7 @@ fun ChatScreen(
 ) {
     Scaffold(
         topBar = {
-            PopBackTopBar("Ela", onReturn)
+            PopBackTopBar(chatName, onReturn)
         },
         content = {
             MessageList(

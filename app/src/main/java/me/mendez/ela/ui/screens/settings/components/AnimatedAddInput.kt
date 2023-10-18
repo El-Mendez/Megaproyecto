@@ -22,18 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
-fun getHost(url: String): String? {
-    if (url.matches("([a-zA-Z0-9\\-_]+:\\/\\/)?([a-zA-Z0-9\\-_]+\\.)*([a-zA-Z0-9\\-_]+@)?[a-zA-Z0-9\\-_]+\\.[a-zA-Z0-9\\-_]+(:[0-9]+)?[\\/@a-zA-Z0-9%&=+]*".toRegex())) {
-        return url
-            .split("://", limit = 2).last()
-            .split("@", limit = 2).last()
-            .split("/", limit = 2).first()
-            .split(":", limit = 2).first()
-            .lowercase()
-    }
-    return null
-}
+import me.mendez.ela.persistence.settings.ElaSettings
 
 
 @Composable
@@ -49,7 +38,7 @@ fun AnimatedAddInput(onAdd: (String) -> Unit) {
     }
     val isValid by remember {
         derivedStateOf {
-            !getHost(text).isNullOrBlank()
+            !ElaSettings.extractDomain(text).isNullOrBlank()
         }
     }
 
@@ -114,7 +103,7 @@ fun AnimatedAddInput(onAdd: (String) -> Unit) {
                     } else if (!isValid) {
                         adding = false
                     } else {
-                        val host = getHost(text) ?: return@clickable
+                        val host = ElaSettings.extractDomain(text) ?: return@clickable
                         text = ""
                         onAdd(host)
                     }
@@ -137,7 +126,7 @@ fun AnimatedAddInput(onAdd: (String) -> Unit) {
             ) {
                 Icon(
                     Icons.Filled.Close,
-                    "añadir dominio",
+                    "cancelar",
                     tint = MaterialTheme.colors.onSecondary,
                 )
             }

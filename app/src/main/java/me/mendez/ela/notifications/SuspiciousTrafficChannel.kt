@@ -167,7 +167,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                             setAction(Intent.ACTION_VIEW)
                             putExtra(BubbleActivity.BUBBLE_DOMAIN_EXTRA_PARAM, domain)
                         },
-                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                    PendingIntent.FLAG_MUTABLE,
                 )
         }
 

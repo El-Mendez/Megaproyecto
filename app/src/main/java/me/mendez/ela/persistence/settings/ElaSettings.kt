@@ -24,15 +24,48 @@ data class ElaSettings(
     val vpnRunning: Boolean,
     val startOnBoot: Boolean,
     val blockDefault: Boolean,
-    val domains: List<String>,
+    val whitelist: List<String>,
 ) {
+    fun withAddedInWhitelist(newDomain: String): ElaSettings {
+        val domain = extractDomain(newDomain) ?: return this
+
+        val newDomains = whitelist.toMutableList()
+        newDomains.add(domain)
+
+        return withWhitelist(newDomains)
+    }
+
+    fun withWhitelist(newDomains: List<String>): ElaSettings {
+        val finalDomains = newDomains.toHashSet().toList().sorted()
+
+        if (whitelist.size == finalDomains.size && whitelist.containsAll(finalDomains)) {
+            return this
+        }
+
+        return copy(whitelist = newDomains)
+    }
+
     companion object {
+
+        fun extractDomain(url: String): String? {
+            if (url.matches("([a-zA-Z0-9\\-_]+:\\/\\/)?([a-zA-Z0-9\\-_]+\\.)*([a-zA-Z0-9\\-_]+@)?[a-zA-Z0-9\\-_]+\\.[a-zA-Z0-9\\-_]+(:[0-9]+)?[\\/@a-zA-Z0-9%&=+]*".toRegex())) {
+                return url
+                    .split("://", limit = 2).last()
+                    .split("@", limit = 2).last()
+                    .split("/", limit = 2).first()
+                    .split(":", limit = 2).first()
+                    .lowercase()
+            }
+            return null
+        }
+
+
         fun default(): ElaSettings {
             return ElaSettings(
                 vpnRunning = false,
                 blockDefault = true,
                 startOnBoot = false,
-                domains = emptyList(),
+                whitelist = emptyList(),
             )
         }
     }

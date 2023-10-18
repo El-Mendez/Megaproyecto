@@ -17,7 +17,15 @@ fun ChatScreen(
     calculatingResponse: Boolean,
     onSubmit: (String) -> Unit,
     onReturn: (() -> Unit)?,
+    showAddToWhitelist: Boolean = false,
+    onWhitelistAccept: ((Boolean) -> Unit)? = null,
 ) {
+    val whitelistTemp = fun(value: Boolean) {
+        if (onWhitelistAccept != null) {
+            onWhitelistAccept(value)
+        }
+    }
+
     Scaffold(
         topBar = {
             PopBackTopBar(chatName, onReturn)
@@ -27,6 +35,8 @@ fun ChatScreen(
                 messages = messages,
                 writingBubble = calculatingResponse,
                 modifier = Modifier.padding(it),
+                whitelistVisible = showAddToWhitelist,
+                onWhitelistAction = whitelistTemp,
             )
         },
         bottomBar = {

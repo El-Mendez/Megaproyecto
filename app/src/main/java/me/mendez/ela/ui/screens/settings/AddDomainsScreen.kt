@@ -15,13 +15,13 @@ fun AddDomainsScreen(
     settings: ElaSettings,
     update: ((ElaSettings) -> ElaSettings) -> Unit,
 ) {
-    var currentDomains: List<String> by remember(settings.domains) {
-        mutableStateOf(settings.domains.toMutableList())
+    var currentDomains: List<String> by remember(settings.whitelist) {
+        mutableStateOf(settings.whitelist.toMutableList())
     }
 
-    val changed by remember(settings.domains) {
+    val changed by remember(settings.whitelist) {
         derivedStateOf {
-            currentDomains.size != settings.domains.size || !currentDomains.containsAll(settings.domains)
+            currentDomains.size != settings.whitelist.size || !currentDomains.containsAll(settings.whitelist)
         }
     }
 
@@ -82,7 +82,7 @@ fun AddDomainsScreen(
                 onSave = {
                     if (changed) {
                         update { old ->
-                            old.copy(domains = currentDomains.toMutableList())
+                            old.withWhitelist(currentDomains)
                         }
                     }
                 },

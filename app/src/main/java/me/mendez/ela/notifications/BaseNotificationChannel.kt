@@ -49,4 +49,10 @@ abstract class BaseNotificationChannel<T> {
             }
         }
     }
+
+    fun removeNotification(context: Context, notificationId: Int) {
+        with(NotificationManagerCompat.from(context)) {
+            cancel(notificationId)
+        }
+    }
 }

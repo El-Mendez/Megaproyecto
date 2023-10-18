@@ -5,13 +5,18 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.datastore.core.DataStore
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import me.mendez.ela.notifications.SuspiciousTrafficChannel
 import me.mendez.ela.persistence.settings.ElaSettings
 import javax.inject.Inject
 
 private const val TAG = "ELA_NOTIFICATION_SERVICE"
 
+@AndroidEntryPoint
 class SuspiciousNotification : BroadcastReceiver() {
     @Inject
     lateinit var elaSettingsStore: DataStore<ElaSettings>
@@ -23,7 +28,7 @@ class SuspiciousNotification : BroadcastReceiver() {
         val action = intent.getStringExtra("action") ?: return
 
         when (action) {
-            "addToWhitelist" -> onAddToWhitelist(domain)
+            "addToWhitelist" -> onAddToWhitelistFromNotification(domain, context)
             "submitFromNotification" -> {
                 val inputtedText = SuspiciousTrafficChannel.recoverSubmittedText(intent) ?: return
                 SuspiciousTrafficChannel
@@ -42,12 +47,16 @@ class SuspiciousNotification : BroadcastReceiver() {
         }
     }
 
-    private fun onAddToWhitelist(domain: String) {
-//        CoroutineScope(Dispatchers.IO + supervisor).launch {
-//            elaSettingsStore.updateData {
-//                it.withAddedInWhitelist(domain)
-//            }
-//        }
+    private fun onAddToWhitelistFromNotification(domain: String, context: Context) {
+        SuspiciousTrafficChannel.removeNotification(
+            context,
+            domain.hashCode()
+        )
+        CoroutineScope(Dispatchers.IO + supervisor).launch {
+            elaSettingsStore.updateData {
+                it.withAddedInWhitelist(domain)
+            }
+        }
     }
 
     companion object {

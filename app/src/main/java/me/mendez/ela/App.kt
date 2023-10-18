@@ -12,13 +12,6 @@ class App : Application() {
         super.onCreate()
         createDailyTip()
         createNotificationChannel()
-
-        SuspiciousTrafficChannel.notify(
-            this,
-            "google.com".hashCode()
-        ) {
-            newSuspiciousTraffic("google.com", "haha te bloqué el dominio google.com")
-        }
     }
 
     private fun createNotificationChannel() {

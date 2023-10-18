@@ -3,11 +3,16 @@ package me.mendez.ela.notifications
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.*
+import androidx.core.content.LocusIdCompat
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import me.mendez.ela.BubbleActivity
+import me.mendez.ela.MainActivity
 import me.mendez.ela.R
 import me.mendez.ela.services.SuspiciousNotification
 import java.util.Date
@@ -16,11 +21,19 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
     override val CHANNEL_ID = "suspicious_traffic"
     override val IMPORTANCE = NotificationManager.IMPORTANCE_HIGH
     override val NAME = "Tráfico sospechoso"
+    override val bubbles = true
     private const val REMOTE_INPUT_TAG = "reply_ela_traffic_input_tag"
 
-    private val ela: Person = Person.Builder()
+    override fun createNotification(context: Context): NotificationCreator = NotificationCreator(context)
+
+    private fun ela(context: Context): Person = Person.Builder()
         .setName("Ela")
-        .setBot(true)
+        .setIcon(
+            IconCompat.createWithResource(
+                context,
+                R.drawable.logo_24
+            )
+        )
         .build()
 
     private val you: Person = Person.Builder()
@@ -35,7 +48,27 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
             ?.toString()
     }
 
+    private fun addShortcut(domain: String, context: Context) {
+        val shortcut = ShortcutInfoCompat.Builder(context, domain)
+            .setLocusId(LocusIdCompat(domain))
+            .setActivity(ComponentName(context, MainActivity::class.java))
+            .setShortLabel(domain)
+            .setIcon(
+                IconCompat.createWithResource(context, R.drawable.logo_24)
+            )
+            .setLongLived(true)
+            .setCategories(setOf("me.mendez.ela.bubbles.category.CHAT_BLOCK"))
+            .setIntent(
+                Intent(context, MainActivity::class.java)
+                    .setAction(Intent.ACTION_VIEW)
+            ).setPerson(ela(context))
+            .build()
+
+        ShortcutManagerCompat.addDynamicShortcuts(context, mutableListOf(shortcut))
+    }
+
     fun addMessageToChat(context: Context, domain: String, message: String, user: Boolean) {
+        val ela = ela(context)
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = notificationManager
             .activeNotifications
@@ -62,6 +95,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
         }
     }
 
+    // hash creation for all Pending Intents
     fun replyActionHash(domain: String): Int = ":replyAction:${domain}".hashCode()
 
     fun whitelistActionHash(domain: String): Int = ":whitelistAction:${domain}".hashCode()
@@ -70,7 +104,6 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
 
     fun bubbleNotificationHash(domain: String): Int = ":bubble:${domain}".hashCode()
 
-    override fun createNotification(context: Context): NotificationCreator = NotificationCreator(context)
 
     class NotificationCreator(val context: Context) {
         private fun createReplyAction(domain: String): NotificationCompat.Action {
@@ -130,14 +163,17 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                     context,
                     bubbleNotificationHash(domain),
                     Intent(context, BubbleActivity::class.java)
-                        .setAction(Intent.ACTION_VIEW),
-                    PendingIntent.FLAG_MUTABLE,
+                        .apply {
+                            setAction(Intent.ACTION_VIEW)
+                            putExtra(BubbleActivity.BUBBLE_DOMAIN_EXTRA_PARAM, domain)
+                        },
+                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
                 )
         }
 
         private fun createNewChatConversation(domain: String): NotificationCompat.MessagingStyle {
             return NotificationCompat
-                .MessagingStyle(ela)
+                .MessagingStyle(ela(context))
                 .setConversationTitle(domain)
         }
 
@@ -146,7 +182,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
             message: String
         ): Notification {
             val messages = createNewChatConversation(domain)
-            messages.addMessage(message, Date().time, ela)
+            messages.addMessage(message, Date().time, ela(context))
             return newSuspiciousTraffic(domain, messages)
         }
 
@@ -154,20 +190,28 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
             domain: String,
             messages: NotificationCompat.MessagingStyle,
         ): Notification {
+            addShortcut(domain, context)
+
             val bubbleMetadata = NotificationCompat.BubbleMetadata
                 .Builder(
                     createBubbleIntent(domain),
                     IconCompat.createWithResource(context, R.drawable.logo_24)
                 ).setDesiredHeight(600)
+                .setAutoExpandBubble(true)
                 .build()
 
             return NotificationCompat.Builder(context, CHANNEL_ID)
+                .setBubbleMetadata(bubbleMetadata)
                 .setSmallIcon(R.drawable.logo_24)
-                .setStyle(messages)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setShortcutId(domain)
+                .setLocusId(LocusIdCompat(domain))
+                .addPerson(ela(context))
                 .addAction(createReplyAction(domain))
                 .addAction(createAddToWhitelistAction(domain))
+                .setShowWhen(true)
+                .setStyle(messages)
                 .setDeleteIntent(createDismissIntent(domain))
-                .setBubbleMetadata(bubbleMetadata)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .build()
         }

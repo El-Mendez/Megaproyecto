@@ -15,6 +15,7 @@ abstract class BaseNotificationChannel<T> {
     protected abstract val NAME: String
     protected abstract val CHANNEL_ID: String
     protected abstract val IMPORTANCE: Int
+    protected open val bubbles = false
 
     protected abstract fun createNotification(context: Context): T
 

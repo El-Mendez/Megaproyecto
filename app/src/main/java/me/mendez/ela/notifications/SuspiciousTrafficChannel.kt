@@ -3,11 +3,9 @@ package me.mendez.ela.notifications
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
-import androidx.core.app.RemoteInput
 import android.content.Context
 import android.content.Intent
-import androidx.core.app.NotificationCompat
-import androidx.core.app.Person
+import androidx.core.app.*
 import me.mendez.ela.R
 import me.mendez.ela.services.SuspiciousNotification
 import java.util.Date
@@ -16,16 +14,51 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
     override val CHANNEL_ID = "suspicious_traffic"
     override val IMPORTANCE = NotificationManager.IMPORTANCE_HIGH
     override val NAME = "Tráfico sospechoso"
+    private const val REMOTE_INPUT_TAG = "reply_ela_traffic_input_tag"
 
-    val ela = Person.Builder()
+    private val ela: Person = Person.Builder()
         .setName("Ela")
         .setBot(true)
         .build()
 
-    val you: Person = Person.Builder()
+    private val you: Person = Person.Builder()
         .setName("Tú")
         .setImportant(true)
         .build()
+
+    fun recoverSubmittedText(intent: Intent): String? {
+        return RemoteInput
+            .getResultsFromIntent(intent)
+            ?.getCharSequence(REMOTE_INPUT_TAG)
+            ?.toString()
+    }
+
+    fun addMessageToChat(context: Context, domain: String, message: String, user: Boolean) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = notificationManager
+            .activeNotifications
+            .find { it.id == domain.hashCode() }
+            ?.notification ?: return
+
+        val oldMessages = NotificationCompat.MessagingStyle
+            .extractMessagingStyleFromNotification(notification)
+            ?.messages ?: return
+
+        val newMessages = NotificationCompat.MessagingStyle(ela)
+            .setConversationTitle(domain)
+
+        oldMessages.forEach {
+            newMessages.addMessage(it.text, it.timestamp, it.person)
+        }
+        newMessages.addMessage(message, Date().time, if (user) you else ela)
+
+        notify(context, domain.hashCode()) {
+            newSuspiciousTraffic(
+                domain,
+                newMessages,
+            )
+        }
+    }
 
     fun replyActionHash(domain: String): Int = ":replyAction:${domain}".hashCode()
 
@@ -35,11 +68,10 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
 
     override fun createNotification(context: Context): NotificationCreator = NotificationCreator(context)
 
-
     class NotificationCreator(val context: Context) {
         private fun createReplyAction(domain: String): NotificationCompat.Action {
             val remoteInput = RemoteInput
-                .Builder("reply_ela_traffic")
+                .Builder(REMOTE_INPUT_TAG)
                 .setLabel("Escribe aquí...")
                 .build()
 
@@ -47,11 +79,8 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                 .getBroadcast(
                     context,
                     replyActionHash(domain),
-                    Intent(context, SuspiciousNotification::class.java).apply {
-                        putExtra("domain", domain)
-                        putExtra("action", "reply")
-                    },
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                    SuspiciousNotification.submitFromNotification(context, domain),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
                 )
 
             return NotificationCompat.Action
@@ -69,10 +98,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                 .getBroadcast(
                     context,
                     whitelistActionHash(domain),
-                    Intent(context, SuspiciousNotification::class.java).apply {
-                        putExtra("domain", domain)
-                        putExtra("action", "whitelist")
-                    },
+                    SuspiciousNotification.addToWhitelist(context, domain),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
 
@@ -89,24 +115,33 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                 .getBroadcast(
                     context,
                     dismissNotificationHash(domain),
-                    Intent(context, SuspiciousNotification::class.java).apply {
-                        putExtra("domain", domain)
-                        putExtra("action", "dismiss")
-                    },
+                    SuspiciousNotification.dismissNotification(context, domain),
                     PendingIntent.FLAG_IMMUTABLE,
                 )
         }
 
-        fun newSuspiciousTraffic(domain: String): Notification {
+        private fun createNewChatConversation(domain: String): NotificationCompat.MessagingStyle {
+            return NotificationCompat
+                .MessagingStyle(ela)
+                .setConversationTitle(domain)
+        }
+
+        fun newSuspiciousTraffic(
+            domain: String,
+            message: String
+        ): Notification {
+            val messages = createNewChatConversation(domain)
+            messages.addMessage(message, Date().time, ela)
+            return newSuspiciousTraffic(domain, messages)
+        }
+
+        fun newSuspiciousTraffic(
+            domain: String,
+            messages: NotificationCompat.MessagingStyle,
+        ): Notification {
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.logo_24)
-                .setStyle(
-                    NotificationCompat
-                        .MessagingStyle(ela)
-                        .setConversationTitle(domain)
-                        .addMessage("what what what", Date().time, ela)
-                        .addMessage("no u", Date().time, you)
-                )
+                .setStyle(messages)
                 .addAction(createReplyAction(domain))
                 .addAction(createAddToWhitelistAction(domain))
                 .setDeleteIntent(createDismissIntent(domain))

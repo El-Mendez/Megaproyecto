@@ -17,7 +17,7 @@ class App : Application() {
             this,
             "google.com".hashCode()
         ) {
-            newSuspiciousTraffic("google.com")
+            newSuspiciousTraffic("google.com", "haha te bloqué el dominio google.com")
         }
     }
 

@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import me.mendez.ela.notifications.SuspiciousTrafficChannel
 
 private const val TAG = "ELA_NOTIFICATION_SERVICE"
 
@@ -14,12 +15,52 @@ class SuspiciousNotification : BroadcastReceiver() {
         val action = intent.getStringExtra("action") ?: return
 
         when (action) {
-            "whitelist" -> println("trying to whitelist")
-            "reply" -> println("reply")
+            "addToWhitelist" -> println("trying to whitelist")
+            "submitFromNotification" -> {
+                val inputtedText = SuspiciousTrafficChannel.recoverSubmittedText(intent) ?: return
+                SuspiciousTrafficChannel
+                    .addMessageToChat(
+                        context,
+                        domain,
+                        inputtedText,
+                        true,
+                    )
+            }
 //            "dismiss" ->
             else -> {
                 Log.e(TAG, "unknown action: $action")
                 return
+            }
+        }
+    }
+
+    companion object {
+        fun submitFromNotification(context: Context, domain: String): Intent {
+            return Intent(context, SuspiciousNotification::class.java).apply {
+                putExtra("action", "submitFromNotification")
+                putExtra("domain", domain)
+            }
+        }
+
+        fun addToWhitelist(context: Context, domain: String): Intent {
+            return Intent(context, SuspiciousNotification::class.java).apply {
+                putExtra("action", "addToWhitelist")
+                putExtra("domain", domain)
+            }
+        }
+
+        fun submitFromChat(context: Context, domain: String, message: String): Intent {
+            return Intent(context, SuspiciousNotification::class.java).apply {
+                putExtra("action", "submitFromChat")
+                putExtra("domain", domain)
+                putExtra("message", message)
+            }
+        }
+
+        fun dismissNotification(context: Context, domain: String): Intent {
+            return Intent(context, SuspiciousNotification::class.java).apply {
+                putExtra("action", "dismissNotification")
+                putExtra("domain", domain)
             }
         }
     }

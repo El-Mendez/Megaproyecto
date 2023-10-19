@@ -1,5 +1,6 @@
 package me.mendez.ela.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -33,6 +34,7 @@ fun MainScreen(
     blocks: Int,
 ) {
     val image = ImageBitmap.imageResource(R.drawable.background_tile)
+    val verticalScroll = rememberScrollState()
     val brush = remember {
         ShaderBrush(
             ImageShader(
@@ -47,6 +49,7 @@ fun MainScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(brush)
+            .verticalScroll(verticalScroll)
     ) {
         TopButtons(onSend, onSettings)
 
@@ -57,21 +60,20 @@ fun MainScreen(
             blocks = blocks,
         )
 
-        if (suspiciousAppsAmount != 0) {
+        AnimatedVisibility(suspiciousAppsAmount != 0) {
             SuspiciousAppsWarning(
                 onSuspiciousAppClick,
                 suspiciousAppsAmount
             )
         }
 
-        if (!vpnEnabled) {
+        AnimatedVisibility(!vpnEnabled) {
             DisabledWarning(enableVpn)
         }
 
         DailyTip("Actualiza tus contraseñas frecuentemente.", onSend)
 
-//        DailyBlocksCard(onDetails)
-
+//        DailyBlocksCard(onDetails) TODO
         EmptyDailyBlocksCard()
     }
 }

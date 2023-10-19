@@ -17,6 +17,7 @@ import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.ui.theme.ElaTheme
 import dagger.hilt.android.AndroidEntryPoint
 import me.mendez.ela.persistence.database.apps.SuspiciousAppDao
+import me.mendez.ela.services.PermissionCheck
 import me.mendez.ela.ui.screens.DailyBlocksScreen
 import me.mendez.ela.ui.screens.MainScreen
 import me.mendez.ela.ui.screens.suspicious.SuspiciousAppsScreen
@@ -37,13 +38,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        PermissionCheck.notify(this)
 
         setContent {
             ElaTheme {
                 val navController = rememberNavController()
                 val chatViewModel = viewModel<ChatViewModel>()
                 val elaSettings = elaSettingsStore.data.collectAsState(initial = ElaSettings.default()).value
-                val suspiciousApps = suspiciousApps.getAll().collectAsState(initial = emptyList()).value
+                val suspiciousApps = suspiciousApps.getAll().collectAsState(initial = emptyList())
 
                 val settingsViewModel = viewModel<SettingsViewModel>()
                 val startActivityForResultContract = rememberLauncherForActivityResult(
@@ -77,7 +79,7 @@ class MainActivity : ComponentActivity() {
                             enableVpn = {
                                 navController.navigate("settings")
                             },
-                            suspiciousAppsAmount = suspiciousApps.size,
+                            suspiciousAppsAmount = suspiciousApps.value.size,
                             onSuspiciousAppClick = {
                                 navController.navigate("app-details")
                             },
@@ -118,7 +120,7 @@ class MainActivity : ComponentActivity() {
 
                     composable("app-details") {
                         SuspiciousAppsScreen(
-                            remember { derivedStateOf { suspiciousApps.map { it.packageName } } }.value,
+                            remember { derivedStateOf { suspiciousApps.value.map { it.packageName } } }.value,
                             navController::popBackStack
                         )
                     }

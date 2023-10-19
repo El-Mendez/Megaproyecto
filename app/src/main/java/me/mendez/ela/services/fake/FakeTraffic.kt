@@ -1,10 +1,10 @@
-package me.mendez.ela.services
+package me.mendez.ela.services.fake
 
 import android.service.quicksettings.TileService
 import android.util.Log
 import me.mendez.ela.notifications.SuspiciousTrafficChannel
 
-private const val TAG = "ELA_FAKE_TAG"
+private const val TAG = "ELA_FAKE_TRAFFIC"
 
 class FakeTraffic : TileService() {
     override fun onClick() {

@@ -1,19 +1,19 @@
 package me.mendez.ela.ui.screens.suspicious.components
 
 import android.content.pm.PackageManager
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SuspiciousApps(packagesNames: List<String>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -39,12 +39,13 @@ fun SuspiciousApps(packagesNames: List<String>, modifier: Modifier = Modifier) {
     }
 
     Box(modifier) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-        ) {
-            items(apps) {
-                SuspiciousApp(it)
+        LazyColumn {
+            itemsIndexed(apps) { index, app ->
+                SuspiciousApp(
+                    app,
+                    index != 0,
+                    Modifier.animateItemPlacement()
+                )
             }
         }
     }

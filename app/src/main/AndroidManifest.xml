@@ -46,9 +46,11 @@
 
         <receiver android:name=".services.PermissionCheck" android:exported="true" android:process=":permission">
             <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.PACKAGE_INSTALL"/>
                 <action android:name="android.intent.action.PACKAGE_ADDED"/>
                 <action android:name="android.intent.action.PACKAGE_REMOVED"/>
+                <action android:name="me.mendez.ela.TEST_APP_INSTALL"/>
                 <data android:scheme="package"/>
             </intent-filter>
         </receiver>
@@ -78,8 +80,19 @@
             </intent-filter>
         </service>
 
-        <service android:name=".services.FakeTraffic"
+        <service android:name=".services.fake.FakeTraffic"
                  android:label="FAKE TRAFFIC"
+                 android:icon="@drawable/logo_24"
+                 android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+                 android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <service android:name=".services.fake.FakeAppInstall"
+                 android:label="FAKE APP INSTALL"
                  android:icon="@drawable/logo_24"
                  android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
                  android:exported="true">

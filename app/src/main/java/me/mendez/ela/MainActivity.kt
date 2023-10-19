@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
     lateinit var elaSettingsStore: DataStore<ElaSettings>
 
     @Inject
-    lateinit var database: SuspiciousAppDao
+    lateinit var suspiciousApps: SuspiciousAppDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val chatViewModel = viewModel<ChatViewModel>()
                 val elaSettings = elaSettingsStore.data.collectAsState(initial = ElaSettings.default()).value
-                val suspiciousApps = database.getAll().collectAsState(initial = emptyList()).value
+                val suspiciousApps = suspiciousApps.getAll().collectAsState(initial = emptyList()).value
 
                 val settingsViewModel = viewModel<SettingsViewModel>()
                 val startActivityForResultContract = rememberLauncherForActivityResult(

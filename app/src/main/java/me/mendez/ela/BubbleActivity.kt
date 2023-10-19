@@ -1,5 +1,7 @@
 package me.mendez.ela
 
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -72,5 +74,17 @@ class BubbleActivity : ComponentActivity() {
 
     companion object {
         const val BUBBLE_DOMAIN_EXTRA_PARAM = "domain"
+
+        fun createLaunchIntent(context: Context, domain: String): PendingIntent {
+            return PendingIntent.getActivity(
+                context,
+                ":openBubbleActivity:$domain:".hashCode(),
+                Intent(context, BubbleActivity::class.java).apply {
+                    setAction(Intent.ACTION_VIEW)
+                    putExtra(BUBBLE_DOMAIN_EXTRA_PARAM, domain)
+                },
+                PendingIntent.FLAG_MUTABLE,
+            )
+        }
     }
 }

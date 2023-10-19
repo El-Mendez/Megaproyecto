@@ -8,7 +8,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import me.mendez.ela.persistence.settings.ElaSettings
-import me.mendez.ela.vpn.ElaVpn
+import me.mendez.ela.vpn.ElaVpnService
 import javax.inject.Inject
 
 private const val TAG = "ELA_TILE"
@@ -42,16 +42,16 @@ class QuickSetting : TileService() {
         super.onClick()
 
         if (state.vpnRunning) {
-            ElaVpn.sendStop(this)
+            ElaVpnService.sendStop(this)
             return
         }
 
-        if (!ElaVpn.haveAllPermissions(this)) {
+        if (!ElaVpnService.haveAllPermissions(this)) {
             Log.i(TAG, "not enough permissions to start vpn")
             return
         }
 
-        ElaVpn.sendStart(this)
+        ElaVpnService.sendStart(this)
     }
 
     override fun onDestroy() {

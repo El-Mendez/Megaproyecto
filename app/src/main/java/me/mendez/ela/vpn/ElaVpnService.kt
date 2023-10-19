@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import me.mendez.ela.notifications.VpnChannel
 import me.mendez.ela.persistence.settings.ElaSettings
 import javax.inject.Inject
@@ -18,7 +19,7 @@ import javax.inject.Inject
 private const val TAG = "VPN"
 
 @AndroidEntryPoint
-class ElaVpn : VpnService() {
+class ElaVpnService : VpnService() {
     private enum class Commands {
         START, STOP, RESTART
     }
@@ -35,7 +36,7 @@ class ElaVpn : VpnService() {
 
         @JvmStatic
         fun sendStart(context: Context) {
-            Intent(context, ElaVpn::class.java).also { intent ->
+            Intent(context, ElaVpnService::class.java).also { intent ->
                 intent.action = Commands.START.toString()
                 context.startService(intent)
             }
@@ -43,7 +44,7 @@ class ElaVpn : VpnService() {
 
         @JvmStatic
         fun sendStop(context: Context) {
-            Intent(context, ElaVpn::class.java).also { intent ->
+            Intent(context, ElaVpnService::class.java).also { intent ->
                 intent.action = Commands.STOP.toString()
                 context.startService(intent)
             }
@@ -51,7 +52,7 @@ class ElaVpn : VpnService() {
 
         @JvmStatic
         fun sendRestart(context: Context) {
-            Intent(context, ElaVpn::class.java).also { intent ->
+            Intent(context, ElaVpnService::class.java).also { intent ->
                 intent.action = Commands.RESTART.toString()
                 context.startService(intent)
             }
@@ -93,9 +94,12 @@ class ElaVpn : VpnService() {
                 .runningNotification()
         )
 
-        vpnThread.start(Builder())
-
         runBlocking {
+            vpnThread.start(
+                Builder(),
+                elaSettingsStore.data.first()
+            )
+
             showRunning(true, elaSettingsStore)
         }
     }
@@ -103,16 +107,20 @@ class ElaVpn : VpnService() {
     private fun restart() {
         Log.i(TAG, "restarting vpn")
         vpnThread.stop()
-        vpnThread.start(Builder())
 
         runBlocking {
+            vpnThread.start(
+                Builder(),
+                elaSettingsStore.data.first()
+            )
+
             showRunning(true, elaSettingsStore)
         }
     }
 
     private fun stop() {
         Log.i(TAG, "stopped vpn")
-        vpnThread.stop()
+        vpnThread.halt()
 
         runBlocking {
             showRunning(false, elaSettingsStore)
@@ -125,14 +133,14 @@ class ElaVpn : VpnService() {
         Log.e(TAG, reason)
 
         VpnChannel.notify(
-            this@ElaVpn,
+            this@ElaVpnService,
             VpnChannel.ERROR_ID,
         ) {
             errorNotification()
         }
 
         try {
-            vpnThread.stop()
+            vpnThread.halt()
         } catch (e: Exception) {
             Log.e(TAG, "could not force stop vpn")
         }

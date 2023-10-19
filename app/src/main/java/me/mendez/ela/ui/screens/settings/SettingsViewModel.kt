@@ -22,7 +22,7 @@ import kotlinx.coroutines.withContext
 import me.mendez.ela.persistence.settings.ActionNeeded
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.persistence.settings.nextAction
-import me.mendez.ela.vpn.ElaVpn
+import me.mendez.ela.vpn.ElaVpnService
 import javax.inject.Inject
 
 private const val TAG = "ELA_SETTINGS"
@@ -50,12 +50,12 @@ class SettingsViewModel @Inject constructor(
 
                     ActionNeeded.STOP -> {
                         Log.i(TAG, "stopping vpn")
-                        ElaVpn.sendStop(context)
+                        ElaVpnService.sendStop(context)
                     }
 
                     ActionNeeded.RESTART -> {
                         Log.i(TAG, "changes were made when it was on. Trying to restart service.")
-                        ElaVpn.sendRestart(context)
+                        ElaVpnService.sendRestart(context)
                     }
 
                     ActionNeeded.NONE -> {
@@ -112,7 +112,7 @@ class SettingsViewModel @Inject constructor(
         if (result.resultCode == Activity.RESULT_OK) {
             Log.d(TAG, "vpn permissions granted")
             Log.i(TAG, "Vpn is ready to start!")
-            ElaVpn.sendStart(context)
+            ElaVpnService.sendStart(context)
         } else {
             Log.i(TAG, "vpn permissions denied")
             cancelVpnStartRequest(dataStore)
@@ -121,7 +121,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun cancelVpnStartRequest(dataStore: DataStore<ElaSettings>) {
         viewModelScope.launch {
-            ElaVpn.showRunning(false, dataStore)
+            ElaVpnService.showRunning(false, dataStore)
         }
     }
 

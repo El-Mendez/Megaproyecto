@@ -7,7 +7,7 @@ import android.util.Log
 import kotlinx.coroutines.runBlocking
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.persistence.settings.ElaSettingsModule
-import me.mendez.ela.vpn.ElaVpn
+import me.mendez.ela.vpn.ElaVpnService
 
 private const val TAG = "ELA_BOOT"
 
@@ -32,10 +32,10 @@ class BootListener : BroadcastReceiver() {
 
             if (state.startOnBoot) {
                 Log.i(TAG, "starting vpn")
-                ElaVpn.sendStart(context)
+                ElaVpnService.sendStart(context)
             } else if (state.vpnRunning) {
                 Log.d(TAG, "resetting running state to false")
-                ElaVpn.showRunning(false, dataStore)
+                ElaVpnService.showRunning(false, dataStore)
             }
         }
 

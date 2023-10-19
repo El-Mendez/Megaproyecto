@@ -59,7 +59,7 @@
 
         <receiver android:name=".services.SuspiciousNotification"/>
 
-        <service android:name=".vpn.ElaVpn" android:process=":vpn"
+        <service android:name=".vpn.ElaVpnService" android:process=":vpn"
                  android:permission="android.permission.BIND_VPN_SERVICE"/>
 
         <service android:name=".services.QuickSetting"

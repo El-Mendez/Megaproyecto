@@ -11,14 +11,17 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import me.mendez.ela.persistence.database.apps.SuspiciousApp
 import me.mendez.ela.persistence.database.apps.SuspiciousAppDao
+import me.mendez.ela.persistence.database.chats.Message
+import me.mendez.ela.persistence.database.chats.MessageDao
 
 @Database(
-    entities = [SuspiciousApp::class],
-    version = 1,
+    entities = [SuspiciousApp::class, Message::class],
+    version = 2,
 )
 @TypeConverters(Converters::class)
 abstract class ElaDatabase : RoomDatabase() {
     abstract val suspiciousApps: SuspiciousAppDao
+    abstract val messages: MessageDao
 }
 
 @Module
@@ -28,6 +31,7 @@ object DatabaseModule {
     fun provideDatabase(app: Application): ElaDatabase {
         return Room
             .databaseBuilder(app, ElaDatabase::class.java, "ela_database")
+            .enableMultiInstanceInvalidation()
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -35,5 +39,10 @@ object DatabaseModule {
     @Provides
     fun provideSuspiciousAppDao(database: ElaDatabase): SuspiciousAppDao {
         return database.suspiciousApps
+    }
+
+    @Provides
+    fun provideMessageDao(database: ElaDatabase): MessageDao {
+        return database.messages
     }
 }

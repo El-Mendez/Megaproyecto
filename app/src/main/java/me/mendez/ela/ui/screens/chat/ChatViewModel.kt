@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import me.mendez.ela.model.MessageData
+import me.mendez.ela.chat.Message
 import me.mendez.ela.remote.ChatApi
 import java.util.*
 import javax.inject.Inject
@@ -18,12 +18,12 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     val chatApi: ChatApi
 ) : ViewModel() {
-    val messages: SnapshotStateList<MessageData> = mutableStateListOf()
+    val messages: SnapshotStateList<Message> = mutableStateListOf()
     val calculatingResponse = mutableStateOf(false)
 
     fun sendMessage(content: String) {
         messages.add(
-            MessageData(
+            Message(
                 content,
                 userCreated = true,
                 date = Date()
@@ -37,7 +37,7 @@ class ChatViewModel @Inject constructor(
                 messages.addAll(res)
             } catch (e: Exception) {
                 messages.add(
-                    MessageData(
+                    Message(
                         "Vaya, parece que no tienes conexión a internet",
                         false,
                         Date(),

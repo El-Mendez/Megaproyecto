@@ -1,11 +1,10 @@
-package me.mendez.ela.model
+package me.mendez.ela.chat
 
 import java.util.Date
 
 
-data class MessageData(
+data class Message(
     val content: String,
     val userCreated: Boolean,
-    val date: Date,
+    val date: Date = Date(),
 )
-

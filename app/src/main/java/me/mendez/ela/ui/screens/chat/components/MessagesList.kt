@@ -18,11 +18,11 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import me.mendez.ela.R
-import me.mendez.ela.model.MessageData
+import me.mendez.ela.chat.Message
 
 @Composable
 fun MessageList(
-    messages: List<MessageData>,
+    messages: List<Message>,
     writingBubble: Boolean,
     modifier: Modifier,
     whitelistVisible: Boolean,

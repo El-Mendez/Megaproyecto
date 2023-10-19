@@ -57,10 +57,12 @@ class BubbleActivity : ComponentActivity() {
         }
 
         setContent {
+            val messages = viewModel.messages.collectAsState(emptyList())
+
             ElaTheme {
                 ChatScreen(
                     viewModel.domain,
-                    viewModel.messages,
+                    messages.value,
                     viewModel.calculatingResponse.value,
                     onSubmit = viewModel::sendMessage,
                     onReturn = null,

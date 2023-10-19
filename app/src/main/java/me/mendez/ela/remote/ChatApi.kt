@@ -1,6 +1,6 @@
 package me.mendez.ela.remote
 
-import me.mendez.ela.model.MessageData
+import me.mendez.ela.chat.Message
 import me.mendez.ela.remote.dto.ChatApiImpl
 import dagger.Module
 import dagger.Provides
@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
 import javax.inject.Singleton
 
 interface ChatApi {
-    suspend fun getResponse(chat: List<MessageData>): List<MessageData>
+    suspend fun getResponse(chat: List<Message>): List<Message>
 
     companion object {
         fun create(): ChatApi {

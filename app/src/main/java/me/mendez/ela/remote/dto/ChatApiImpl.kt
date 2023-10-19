@@ -1,7 +1,7 @@
 package me.mendez.ela.remote.dto
 
 import me.mendez.ela.BuildConfig
-import me.mendez.ela.model.MessageData
+import me.mendez.ela.chat.Message
 import me.mendez.ela.remote.ChatApi
 import me.mendez.ela.remote.GPTRoutes
 
@@ -20,7 +20,7 @@ import java.util.*
 class ChatApiImpl(
     private val client: HttpClient
 ) : ChatApi {
-    override suspend fun getResponse(chat: List<MessageData>): List<MessageData> {
+    override suspend fun getResponse(chat: List<Message>): List<Message> {
         val reqBody = chat.map {
             ChatMessage(
                 if (it.userCreated) "user" else "assistant",
@@ -30,7 +30,7 @@ class ChatApiImpl(
 
         return try {
             getNewChatMessage(reqBody).choices.map {
-                MessageData(
+                Message(
                     content = it.message.content,
                     userCreated = it.message.role != "assistant",
                     date = Date()
@@ -56,4 +56,3 @@ class ChatApiImpl(
         }.body()
     }
 }
-

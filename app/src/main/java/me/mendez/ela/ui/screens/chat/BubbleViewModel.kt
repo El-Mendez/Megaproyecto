@@ -1,7 +1,6 @@
 package me.mendez.ela.ui.screens.chat
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
@@ -12,19 +11,21 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import me.mendez.ela.model.MessageData
+import me.mendez.ela.chat.Message
+import me.mendez.ela.persistence.database.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.remote.ChatApi
-import java.util.*
 
 
 class BubbleViewModel @AssistedInject constructor(
     val chatApi: ChatApi,
+    val messagesDao: MessageDao,
     var elaSettingsStore: DataStore<ElaSettings>,
     @Assisted
     val domain: String,
 ) : ViewModel() {
-    val messages = mutableStateListOf<MessageData>()
+    val messages = messagesDao
+        .getMessages(domain)
 
     val ignoreAddToWhitelist = mutableStateOf(false)
     val inWhitelist = elaSettingsStore
@@ -36,28 +37,25 @@ class BubbleViewModel @AssistedInject constructor(
     val calculatingResponse = mutableStateOf(false)
 
     fun sendMessage(content: String) {
-        messages.add(
-            MessageData(
-                content,
-                userCreated = true,
-                date = Date()
-            )
-        )
-
         viewModelScope.launch {
+            val messages = messages.first()
+
+            val userQuestion = Message(content, true)
+            messagesDao.addMessage(domain, userQuestion)
+
             calculatingResponse.value = true
+
+            val latestConversation = messages
+                .toMutableList()
+                .apply { add(userQuestion) }
+
             try {
-                val res = chatApi.getResponse(messages)
-                messages.addAll(res)
+                val elaResponse = chatApi.getResponse(latestConversation).last()
+                messagesDao.addMessage(domain, elaResponse)
             } catch (e: Exception) {
-                messages.add(
-                    MessageData(
-                        "Vaya, parece que no tienes conexión a internet",
-                        false,
-                        Date(),
-                    )
-                )
+                messagesDao.addMessage(domain, Message("parece que no tienes conexión a internet", false))
             }
+
             calculatingResponse.value = false
         }
         Log.d("ChatScreen", "sending message :$content")

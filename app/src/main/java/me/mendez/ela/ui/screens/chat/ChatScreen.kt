@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import me.mendez.ela.model.MessageData
+import me.mendez.ela.chat.Message
 import me.mendez.ela.ui.general.PopBackTopBar
 import me.mendez.ela.ui.screens.chat.components.InputBar
 import me.mendez.ela.ui.screens.chat.components.MessageList
@@ -13,7 +13,7 @@ import me.mendez.ela.ui.screens.chat.components.MessageList
 @Composable
 fun ChatScreen(
     chatName: String,
-    messages: List<MessageData>,
+    messages: List<Message>,
     calculatingResponse: Boolean,
     onSubmit: (String) -> Unit,
     onReturn: (() -> Unit)?,

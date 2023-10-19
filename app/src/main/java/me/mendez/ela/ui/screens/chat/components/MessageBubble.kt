@@ -15,11 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import me.mendez.ela.model.MessageData
+import me.mendez.ela.chat.Message
 import java.text.DateFormat
 
 @Composable
-fun MessageBubble(content: MessageData) {
+fun MessageBubble(content: Message) {
     var showDetails by remember { mutableStateOf(false) }
     val alignment: Alignment
     val backgroundColor: Color

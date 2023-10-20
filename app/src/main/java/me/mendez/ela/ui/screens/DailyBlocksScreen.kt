@@ -26,8 +26,6 @@ fun DailyBlocksScreen(onReturn: (() -> Unit)?, dailyBlocks: List<DailyBlocks>) {
 
 @Composable
 fun DailyBlocksList(modifier: Modifier = Modifier, dailyBlocks: List<DailyBlocks>) {
-    var loading by remember { mutableStateOf(true) }
-
     Box(modifier = modifier) {
         LazyColumn(modifier = Modifier.padding(horizontal = 10.dp)) {
             itemsIndexed(dailyBlocks) { index, block ->

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -267,11 +268,19 @@ fun DailyBlocksCard(onClick: () -> Unit, dailyBlocks: List<DailyBlocks>, totalDa
                     ) {
                         Box(
                             modifier = Modifier
-                                .height(45.dp)
-                                .width(45.dp)
+                                .height(55.dp)
+                                .width(55.dp)
                                 .padding(end = 10.dp, top = 5.dp, bottom = 5.dp)
-                                .background(Color.Black)
-                        )
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colors.secondary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = (block.domain.firstOrNull() ?: "").toString().uppercase(),
+                                color = MaterialTheme.colors.onSecondary,
+                                style = MaterialTheme.typography.h2.copy(fontWeight = FontWeight.ExtraBold),
+                            )
+                        }
                         Column {
                             Text(block.domain, fontWeight = FontWeight.Bold)
                             Text(

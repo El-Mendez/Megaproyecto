@@ -126,7 +126,8 @@ class MainActivity : ComponentActivity() {
 
                     composable("details") {
                         DailyBlocksScreen(
-                            onReturn = navController::popBackStack
+                            onReturn = navController::popBackStack,
+                            dailyBlocks = dailyBlocks.value,
                         )
                     }
 

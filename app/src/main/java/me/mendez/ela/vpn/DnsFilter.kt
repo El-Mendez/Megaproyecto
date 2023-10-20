@@ -3,6 +3,7 @@ package me.mendez.ela.vpn
 import android.util.Log
 import me.mendez.ela.persistence.settings.ElaSettings
 import org.pcap4j.packet.*
+import org.xbill.DNS.*
 import java.io.FileOutputStream
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -18,14 +19,17 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
         val (ipPacket, udpPacket, dnsPacket) = parseRawIpPacket(request) ?: return
 
         if (shouldForward(dnsPacket)) {
+            Log.i(TAG, "allow ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
+
             val response = ByteBufferPool.poll()
             forwardAndWaitResponse(dnsPacket.rawData, response.array())
 
-//            val dnsRes = parseRawDns(response.array())
-//            Log.i(TAG, "req: $dnsPacket \n\nres: $dnsRes")
-
             writeBack(ipPacket, udpPacket, response.array(), output)
             ByteBufferPool.put(response)
+        } else {
+            Log.i(TAG, "block ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
+            val response = fakeNoAnswer(dnsPacket)
+            writeBack(ipPacket, udpPacket, response, output)
         }
     }
 
@@ -47,12 +51,15 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
         return !elaSettings.whitelist.contains(target)
     }
 
-    private fun forward(rawRequest: ByteArray) {
-        val socket = DatagramSocket()
-        service.protect(socket)
+    private fun fakeNoAnswer(dnsPacket: DnsPacket): ByteArray {
+        val dnsRequest = Message(dnsPacket.rawData)
+        val name = Name("ela.ela.ela.")
+        val fakeAuthority = SOARecord(name, DClass.IN, 5, name, name, 0, 0, 0, 0, 5)
 
-        socket.send(DatagramPacket(rawRequest, 0, rawRequest.size, upstreamDnsServer, 53))
-        socket.close()
+        dnsRequest.header.setFlag(Flags.QR.toInt())
+        dnsRequest.header.rcode = Rcode.NOERROR
+        dnsRequest.addRecord(fakeAuthority, Section.AUTHORITY)
+        return dnsRequest.toWire()
     }
 
     private fun forwardAndWaitResponse(rawRequest: ByteArray, rawResponse: ByteArray) {

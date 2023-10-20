@@ -17,8 +17,16 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
     fun filter(request: ByteBuffer, output: FileOutputStream) {
         val (ipPacket, udpPacket, dnsPacket) = parseRawIpPacket(request) ?: return
 
-        if (shouldForward(dnsPacket))
-            forward(udpPacket, dnsPacket, ipPacket, output)
+        if (shouldForward(dnsPacket)) {
+            val response = ByteBufferPool.poll()
+            forwardAndWaitResponse(dnsPacket.rawData, response.array())
+
+//            val dnsRes = parseRawDns(response.array())
+//            Log.i(TAG, "req: $dnsPacket \n\nres: $dnsRes")
+
+            writeBack(ipPacket, udpPacket, response.array(), output)
+            ByteBufferPool.put(response)
+        }
     }
 
     private fun shouldForward(dnsPacket: DnsPacket): Boolean {
@@ -39,25 +47,30 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
         return !elaSettings.whitelist.contains(target)
     }
 
-    private fun forward(udpPacket: UdpPacket, dnsRequest: DnsPacket, ipPacket: IpPacket, output: FileOutputStream) {
-        val rawDnsRequest = dnsRequest.rawData
-
+    private fun forward(rawRequest: ByteArray) {
         val socket = DatagramSocket()
         service.protect(socket)
 
-        socket.send(DatagramPacket(rawDnsRequest, 0, rawDnsRequest.size, upstreamDnsServer, 53))
-
-        val rawDnsResponseBuffer = ByteBufferPool.poll()
-        val rawDnsResponse = rawDnsResponseBuffer.array()
-
-        socket.receive(DatagramPacket(rawDnsResponse, rawDnsResponse.size))
+        socket.send(DatagramPacket(rawRequest, 0, rawRequest.size, upstreamDnsServer, 53))
         socket.close()
+    }
 
-        val dnsResponse = parseRawDns(rawDnsResponse)
-        if (dnsResponse != null) {
-            Log.d(TAG, "req: $dnsRequest \n\n\nres: $dnsResponse")
-        }
+    private fun forwardAndWaitResponse(rawRequest: ByteArray, rawResponse: ByteArray) {
+        val socket = DatagramSocket()
+        service.protect(socket)
 
+        socket.send(DatagramPacket(rawRequest, 0, rawRequest.size, upstreamDnsServer, 53))
+
+        socket.receive(DatagramPacket(rawResponse, rawResponse.size))
+        socket.close()
+    }
+
+    private fun writeBack(
+        ipPacket: IpPacket,
+        udpPacket: UdpPacket,
+        rawUdpContents: ByteArray,
+        output: FileOutputStream
+    ) {
         val udpToWrite = UdpPacket.Builder(udpPacket)
             .srcPort(udpPacket.header.dstPort)
             .dstPort(udpPacket.header.srcPort)
@@ -67,7 +80,7 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
             .correctLengthAtBuild(true)
             .payloadBuilder(
                 UnknownPacket.Builder()
-                    .rawData(rawDnsResponse)
+                    .rawData(rawUdpContents)
             )
 
         val ipToWrite: IpPacket = when (ipPacket) {
@@ -91,16 +104,12 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
             }
 
             else -> {
-                Log.i(TAG, "no idea what kind of package this is $ipPacket")
+                Log.e(TAG, "no idea what kind of package this is $ipPacket")
                 return
             }
         }
 
-        Log.i(TAG, "finished parsing thingy")
-        Log.i(TAG, "req: $ipPacket \n\nres: $ipToWrite")
-
-        output.write(ipToWrite.rawData, 0, ipToWrite.rawData.size)
-        ByteBufferPool.put(rawDnsResponseBuffer)
+        output.write(ipToWrite.rawData)
     }
 
     fun destroy() {

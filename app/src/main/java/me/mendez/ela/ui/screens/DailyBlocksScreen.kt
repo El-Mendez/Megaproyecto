@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import me.mendez.ela.model.AppBlock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -38,24 +37,24 @@ fun DailyBlocks(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var loading by remember { mutableStateOf(true) }
 
-    val apps: List<AppBlock> by produceState(listOf()) {
-        return@produceState withContext(Dispatchers.IO) {
-            val packageManager = context.packageManager
-
-            val allApps = packageManager.getInstalledApplications(PackageManager.MATCH_ALL)
-            val appBlocks = mutableListOf<AppBlock>()
-
-            allApps.forEach {
-                val icon = it.loadIcon(packageManager)
-                val name = it.loadLabel(packageManager).toString()
-
-                appBlocks.add(AppBlock(name, listOf(), icon))
-            }
-
-            loading = false
-            value = appBlocks
-        }
-    }
+//    val apps: List<AppBlock> by produceState(listOf()) {
+//        return@produceState withContext(Dispatchers.IO) {
+//            val packageManager = context.packageManager
+//
+//            val allApps = packageManager.getInstalledApplications(PackageManager.MATCH_ALL)
+//            val appBlocks = mutableListOf<AppBlock>()
+//
+//            allApps.forEach {
+//                val icon = it.loadIcon(packageManager)
+//                val name = it.loadLabel(packageManager).toString()
+//
+//                appBlocks.add(AppBlock(name, listOf(), icon))
+//            }
+//
+//            loading = false
+//            value = appBlocks
+//        }
+//    }
 
     Box(modifier = modifier) {
         if (loading) {
@@ -70,36 +69,36 @@ fun DailyBlocks(modifier: Modifier = Modifier) {
         }
 
         LazyColumn(modifier = Modifier.padding(horizontal = 20.dp)) {
-            items(apps) { app ->
-                Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-
-                        }
-                        .padding(vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Spacer(
-                        modifier = Modifier
-                            .width(50.dp)
-                            .height(50.dp)
-                            .drawWithContent {
-                                drawIntoCanvas { canvas ->
-                                    app.appImage.setBounds(0, 0, size.width.toInt(), size.height.toInt())
-                                    app.appImage.draw(canvas.nativeCanvas)
-                                }
-                            }
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
-
-                    Column {
-                        Text(text = app.name, style = MaterialTheme.typography.body1, fontWeight = FontWeight.Bold)
-                        Text(text = "${app.blocks.size} bloqueos hoy.", style = MaterialTheme.typography.body1)
-                    }
-                }
-            }
+//            items(apps) { app ->
+//                Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .clickable {
+//
+//                        }
+//                        .padding(vertical = 10.dp),
+//                    verticalAlignment = Alignment.CenterVertically,
+//                ) {
+//                    Spacer(
+//                        modifier = Modifier
+//                            .width(50.dp)
+//                            .height(50.dp)
+//                            .drawWithContent {
+//                                drawIntoCanvas { canvas ->
+//                                    app.appImage.setBounds(0, 0, size.width.toInt(), size.height.toInt())
+//                                    app.appImage.draw(canvas.nativeCanvas)
+//                                }
+//                            }
+//                    )
+//                    Spacer(modifier = Modifier.width(20.dp))
+//
+//                    Column {
+//                        Text(text = app.name, style = MaterialTheme.typography.body1, fontWeight = FontWeight.Bold)
+//                        Text(text = "${app.blocks.size} bloqueos hoy.", style = MaterialTheme.typography.body1)
+//                    }
+//                }
+//            }
         }
     }
 }

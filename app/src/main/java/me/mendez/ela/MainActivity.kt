@@ -17,6 +17,7 @@ import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.ui.theme.ElaTheme
 import dagger.hilt.android.AndroidEntryPoint
 import me.mendez.ela.persistence.database.apps.SuspiciousAppDao
+import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.services.PermissionCheck
 import me.mendez.ela.ui.screens.DailyBlocksScreen
 import me.mendez.ela.ui.screens.MainScreen
@@ -36,6 +37,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var suspiciousApps: SuspiciousAppDao
 
+    @Inject
+    lateinit var blocks: BlockDao
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PermissionCheck.notify(this)
@@ -46,6 +50,12 @@ class MainActivity : ComponentActivity() {
                 val chatViewModel = viewModel<ChatViewModel>()
                 val elaSettings = elaSettingsStore.data.collectAsState(initial = ElaSettings.default()).value
                 val suspiciousApps = suspiciousApps.getAll().collectAsState(initial = emptyList())
+
+                val blockCount = blocks.amount().collectAsState(0)
+                val totalDailyBlocks = blocks.dailyBlockAmount().collectAsState(0)
+                val dailyBlocks = blocks
+                    .dailyBlocks()
+                    .collectAsState(initial = emptyList())
 
                 val settingsViewModel = viewModel<SettingsViewModel>()
                 val startActivityForResultContract = rememberLauncherForActivityResult(
@@ -83,7 +93,9 @@ class MainActivity : ComponentActivity() {
                             onSuspiciousAppClick = {
                                 navController.navigate("app-details")
                             },
-                            blocks = 100,
+                            totalBlocks = blockCount.value,
+                            dailyBlocks = dailyBlocks.value,
+                            totalDailyBlocks = totalDailyBlocks.value,
                         )
                     }
 

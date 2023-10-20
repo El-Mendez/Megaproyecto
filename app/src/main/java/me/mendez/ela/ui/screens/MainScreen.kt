@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import me.mendez.ela.R
+import me.mendez.ela.persistence.database.blocks.DailyBlocks
 
 @Composable
 fun MainScreen(
@@ -31,7 +32,9 @@ fun MainScreen(
     enableVpn: () -> Unit,
     suspiciousAppsAmount: Int,
     onSuspiciousAppClick: () -> Unit,
-    blocks: Int,
+    totalBlocks: Int,
+    dailyBlocks: List<DailyBlocks>,
+    totalDailyBlocks: Int,
 ) {
     val image = ImageBitmap.imageResource(R.drawable.background_tile)
     val verticalScroll = rememberScrollState()
@@ -57,7 +60,7 @@ fun MainScreen(
             modifier = Modifier
                 .height(180.dp)
                 .fillMaxWidth(),
-            blocks = blocks,
+            blocks = totalBlocks,
         )
 
         AnimatedVisibility(suspiciousAppsAmount != 0) {
@@ -73,8 +76,12 @@ fun MainScreen(
 
         DailyTip("Actualiza tus contraseñas frecuentemente.", onSend)
 
-//        DailyBlocksCard(onDetails) TODO
-        EmptyDailyBlocksCard()
+
+        if (dailyBlocks.isEmpty()) {
+            EmptyDailyBlocksCard()
+        } else {
+            DailyBlocksCard(onDetails, dailyBlocks, totalDailyBlocks)
+        }
     }
 }
 
@@ -88,7 +95,7 @@ fun Score(blocks: Int, modifier: Modifier = Modifier) {
         var animationStarted by remember { mutableStateOf(false) }
         val animatedScore by animateIntAsState(
             targetValue = if (animationStarted) blocks else 0,
-            animationSpec = tween(5000), label = "score animation"
+            animationSpec = tween(500), label = "score animation"
         )
 
         LaunchedEffect(Unit) {
@@ -234,12 +241,14 @@ fun CardWithTitle(
 }
 
 @Composable
-fun DailyBlocksCard(onClick: () -> Unit) {
+fun DailyBlocksCard(onClick: () -> Unit, dailyBlocks: List<DailyBlocks>, totalDailyBlocks: Int) {
+    val topBlocks = dailyBlocks.slice(0..<minOf(3, dailyBlocks.size))
+
     CardWithTitle(
         top = {
             Column {
                 Text(
-                    text = "15",
+                    text = totalDailyBlocks.toString(),
                     style = MaterialTheme.typography.h2.copy(fontWeight = FontWeight.ExtraBold),
                 )
                 Text(text = "tráfico sospechoso bloqueado hoy.", style = MaterialTheme.typography.caption)
@@ -252,7 +261,7 @@ fun DailyBlocksCard(onClick: () -> Unit) {
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp),
             ) {
-                repeat(3) {
+                topBlocks.map { block ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -264,8 +273,11 @@ fun DailyBlocksCard(onClick: () -> Unit) {
                                 .background(Color.Black)
                         )
                         Column {
-                            Text("Samsung Internet", fontWeight = FontWeight.Bold)
-                            Text("3 bloqueos", style = MaterialTheme.typography.caption)
+                            Text(block.domain, fontWeight = FontWeight.Bold)
+                            Text(
+                                if (block.amount == 1) "1 bloqueo" else "${block.amount} bloqueos",
+                                style = MaterialTheme.typography.caption
+                            )
                         }
                     }
                 }

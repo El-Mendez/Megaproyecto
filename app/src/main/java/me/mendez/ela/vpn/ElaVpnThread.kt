@@ -1,6 +1,7 @@
 package me.mendez.ela.vpn
 
 import android.net.VpnService
+import android.net.VpnService.Builder
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import me.mendez.ela.BuildConfig
@@ -9,90 +10,123 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-private data class ThreadContainer(
+private data class RunningContext(
     val vpnInterface: ParcelFileDescriptor,
-    val thread: Thread
+    val producer: Thread,
+    val consumers: ExecutorService,
+    val filteringService: DnsFilter,
 )
 
 private const val TAG = "ELA_VPN"
 
 class ElaVpnThread(private val service: ElaVpnService) {
+    private val running = AtomicBoolean(false)
+    private var runningContext: RunningContext? = null
+    private val lock = Any()
 
-    private val shouldStop = AtomicBoolean(false)
-    private val dnsFilter = DnsFilter(service)
-
-    private lateinit var consumers: ExecutorService
-    private var threadContainer: ThreadContainer? = null
-
-    @Synchronized
-    fun start(builder: VpnService.Builder, settings: ElaSettings) {
-        if (threadContainer != null) {
-            Log.e(TAG, "could not start vpn thread because it wasn't closed properly")
+    private fun startNoLock(builder: Builder, settings: ElaSettings) {
+        if (runningContext != null) {
+            Log.w(TAG, "could not restart execution because it was already running.")
             return
         }
 
-        shouldStop.set(false)
-        dnsFilter.elaSettings = settings.copy()
-        consumers = Executors.newFixedThreadPool(2)
+        running.set(true)
+
+        val filteringService = DnsFilter(service, settings.copy())
+        val consumers = Executors.newFixedThreadPool(2)
         val vpnInterface = startVpnInterface(builder)!!
-        val thread = producerThread(vpnInterface)
+        val producer = producerThread(vpnInterface, consumers, filteringService)
 
-        thread.start()
-        threadContainer = ThreadContainer(
-            vpnInterface,
-            thread
-        )
+        producer.start()
+        runningContext = RunningContext(vpnInterface, producer, consumers, filteringService)
     }
 
-    @Synchronized
-    fun stop() {
+    fun start(builder: VpnService.Builder, settings: ElaSettings) = synchronized(lock) {
+        startNoLock(builder, settings)
+    }
+
+    fun restart(builder: Builder, settings: ElaSettings) = synchronized(lock) {
+        running.set(false)
+
+        if (runningContext == null) {
+            Log.w(TAG, "trying to restart when the service was off. Defaulting to start")
+            startNoLock(builder, settings) // No lock just to avoid a deadlock
+            return
+        }
+
+        // stop old jobs
+        endProducer(runningContext!!.producer)
+        endConsumers(runningContext!!.consumers)
+        closeVpnInterface(runningContext!!.vpnInterface)
+
+
+        // start new jobs
+        running.set(true)
+
+        // we can recycle the old filtering model
+        val filteringService = runningContext!!.filteringService
+        filteringService.elaSettings = settings.copy()
+
+        val consumers = Executors.newFixedThreadPool(2)
+        val vpnInterface = startVpnInterface(builder)!!
+        val producer = producerThread(vpnInterface, consumers, filteringService)
+
+        runningContext = RunningContext(vpnInterface, producer, consumers, filteringService)
+    }
+
+    fun stop() = synchronized(lock) {
+        if (runningContext == null) {
+            Log.w(TAG, "vpn was already stopped")
+            return
+        }
+
         Log.d(TAG, "Stopping thread")
-        shouldStop.set(true)
+        running.set(false)
 
-        val threadContainer = threadContainer ?: return
-        endProducer(threadContainer.thread)
-        consumers.shutdownNow()
-        closeVpnInterface(threadContainer.vpnInterface)
-        this.threadContainer = null
+        endProducer(runningContext!!.producer)
+        endConsumers(runningContext!!.consumers)
+        closeVpnInterface(runningContext!!.vpnInterface)
+        runningContext!!.filteringService.destroy()
+
+        runningContext = null
     }
 
-    @Synchronized
-    fun halt() {
-        stop()
-    }
-
-    private fun producerTask(vpnInterface: ParcelFileDescriptor, consumer: ExecutorService, filter: DnsFilter) {
+    private fun producerTask(vpnInterface: ParcelFileDescriptor, consumers: ExecutorService, filter: DnsFilter) {
         val input = FileInputStream(vpnInterface.fileDescriptor)
         val output = FileOutputStream(vpnInterface.fileDescriptor)
 
-        val buffer = ByteBufferPool.poll()
-
-        while (!shouldStop.get()) {
+        while (running.get()) {
+            val buffer = ByteBufferPool.poll()
             try {
                 val size = input.read(buffer.array())
 
-                if (size <= 0) {
-                    Log.w(TAG, "got empty packet!")
-                }
+                if (size <= 0)
+                    Log.i(TAG, "got empty packet!")
 
                 consumers.submit {
-                    dnsFilter.filter(buffer, output)
+                    filter.filter(buffer, output)
+                    ByteBufferPool.put(buffer)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "vpn thread exception $e")
-            } finally {
                 buffer.clear()
+                ByteBufferPool.put(buffer)
             }
         }
     }
 
-    private fun producerThread(vpnInterface: ParcelFileDescriptor): Thread {
+    private fun producerThread(
+        vpnInterface: ParcelFileDescriptor,
+        consumers: ExecutorService,
+        filter: DnsFilter
+    ): Thread {
         Log.d(TAG, "creating vpn producer thread")
 
         val producer = Thread {
-            producerTask(vpnInterface, consumers, dnsFilter)
+            producerTask(vpnInterface, consumers, filter)
         }
 
         producer.setUncaughtExceptionHandler { _, e ->
@@ -132,5 +166,12 @@ class ElaVpnThread(private val service: ElaVpnService) {
         } catch (e: Exception) {
             Log.e(TAG, "could not close vpn interface $e")
         }
+    }
+
+    private fun endConsumers(consumers: ExecutorService) {
+        consumers.shutdown()
+        val finished = consumers.awaitTermination(2000, TimeUnit.MILLISECONDS)
+        if (!finished)
+            consumers.shutdownNow()
     }
 }

@@ -106,10 +106,9 @@ class ElaVpnService : VpnService() {
 
     private fun restart() {
         Log.i(TAG, "restarting vpn")
-        vpnThread.stop()
 
         runBlocking {
-            vpnThread.start(
+            vpnThread.restart(
                 Builder(),
                 elaSettingsStore.data.first()
             )
@@ -120,7 +119,7 @@ class ElaVpnService : VpnService() {
 
     private fun stop() {
         Log.i(TAG, "stopped vpn")
-        vpnThread.halt()
+        vpnThread.stop()
 
         runBlocking {
             showRunning(false, elaSettingsStore)
@@ -140,7 +139,7 @@ class ElaVpnService : VpnService() {
         }
 
         try {
-            vpnThread.halt()
+            vpnThread.stop()
         } catch (e: Exception) {
             Log.e(TAG, "could not force stop vpn")
         }

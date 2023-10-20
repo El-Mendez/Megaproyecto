@@ -1,6 +1,7 @@
 package me.mendez.ela.vpn
 
 import android.util.Log
+import me.mendez.ela.ml.MaliciousDomainClassifier
 import me.mendez.ela.persistence.settings.ElaSettings
 import org.pcap4j.packet.*
 import org.xbill.DNS.*
@@ -9,46 +10,101 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.Inet4Address
 import java.nio.ByteBuffer
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "ELA_DNS_FILTER"
 
-class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings) {
-    private val upstreamDnsServer = Inet4Address.getByName("1.1.1.1")
+private sealed interface FilterStatus {
+    data class Allowed(val date: Long) : FilterStatus
+    data class NotAllowed(val date: Long) : FilterStatus
+}
+
+private sealed interface ForwardAction {
+    data object FORWARD : ForwardAction
+    data object DENY : ForwardAction
+    class DenyWithNotification(val reason: MaliciousDomainClassifier.Result) : ForwardAction
+}
+
+class DnsFilter(private val service: ElaVpnService, private var elaSettings: ElaSettings) {
+    private val domainClassifier = MaliciousDomainClassifier(service)
+    private val upstreamDnsServer = Inet4Address.getByName("1.1.1.2")
+    private val cache = ConcurrentHashMap<String, FilterStatus>()
+
+    init {
+        domainClassifier.load()
+    }
 
     fun filter(request: ByteBuffer, output: FileOutputStream) {
         val (ipPacket, udpPacket, dnsPacket) = parseRawIpPacket(request) ?: return
 
-        if (shouldForward(dnsPacket)) {
-            Log.i(TAG, "allow ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
+        when (shouldForward(dnsPacket)) {
+            ForwardAction.FORWARD -> {
+                Log.i(TAG, "allow ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
 
-            val response = ByteBufferPool.poll()
-            forwardAndWaitResponse(dnsPacket.rawData, response.array())
+                val response = ByteBufferPool.poll()
+                forwardAndWaitResponse(dnsPacket.rawData, response.array())
 
-            writeBack(ipPacket, udpPacket, response.array(), output)
-            ByteBufferPool.put(response)
-        } else {
-            Log.i(TAG, "block ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
-            val response = fakeNoAnswer(dnsPacket)
-            writeBack(ipPacket, udpPacket, response, output)
+                writeBack(ipPacket, udpPacket, response.array(), output)
+                ByteBufferPool.put(response)
+            }
+
+            ForwardAction.DENY -> {
+                Log.i(TAG, "block ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
+                val response = fakeNoAnswer(dnsPacket)
+                writeBack(ipPacket, udpPacket, response, output)
+            }
+
+            is ForwardAction.DenyWithNotification -> {
+                Log.i(TAG, "block and notify ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
+                val response = fakeNoAnswer(dnsPacket)
+                writeBack(ipPacket, udpPacket, response, output)
+            }
         }
     }
 
-    private fun shouldForward(dnsPacket: DnsPacket): Boolean {
+    private fun shouldForward(dnsPacket: DnsPacket): ForwardAction {
         val header: DnsPacket.DnsHeader = dnsPacket.header!!
 
         // why forward a response?
-        if (header.isResponse) return false
+        if (header.isResponse) return ForwardAction.DENY
 
         // for now, let's assume only single question per packet
-        val question = header.questions.first()
+        val question = header.questions.first().qName.name
 
-        if (inWhitelist(question.qName.name)) return true
+        if (inWhitelist(question)) return ForwardAction.FORWARD
 
-        return false
+        // read the cached values
+        when (val cached = cache[question]) {
+            is FilterStatus.Allowed -> {
+                if (cached.date + MAX_ALLOWED_CACHE_TIME >= Date().time) {
+                    Log.d(TAG, "allowed cache hit for $question")
+                    return ForwardAction.FORWARD
+                }
+            }
+
+            is FilterStatus.NotAllowed -> {
+                if (cached.date + MAX_FORBIDDEN_CACHE_TIME >= Date().time) {
+                    Log.d(TAG, "forbidden cache hit for $question")
+                    return ForwardAction.DENY
+                }
+            }
+
+            null -> {}
+        }
+
+        val reason = domainClassifier.predict(question)
+        if (reason == MaliciousDomainClassifier.Result.BENIGN) {
+            cache[question] = FilterStatus.Allowed(Date().time)
+            return ForwardAction.FORWARD
+        }
+
+        cache[question] = FilterStatus.NotAllowed(Date().time)
+        return ForwardAction.DenyWithNotification(reason)
     }
 
     private fun inWhitelist(target: String): Boolean {
-        return !elaSettings.whitelist.contains(target)
+        return elaSettings.whitelist.contains(target)
     }
 
     private fun fakeNoAnswer(dnsPacket: DnsPacket): ByteArray {
@@ -119,11 +175,19 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
         output.write(ipToWrite.rawData)
     }
 
-    fun destroy() {
+    fun recycle(elaSettings: ElaSettings) {
+        this.elaSettings = elaSettings.copy()
+        cache.clear()
+    }
 
+    fun destroy() {
+        domainClassifier.destroy()
     }
 
     companion object {
+        private const val MAX_ALLOWED_CACHE_TIME = 5 * 60 * 1000 // milliseconds
+        private const val MAX_FORBIDDEN_CACHE_TIME = 30 * 60 * 1000 // milliseconds
+
         private fun parseRawIpPacket(request: ByteBuffer): Triple<IpPacket, UdpPacket, DnsPacket>? {
             val bytes = request.array()
 

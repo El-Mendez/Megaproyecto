@@ -11,7 +11,7 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.runBlocking
-import me.mendez.ela.model.MaliciousAppClassificator
+import me.mendez.ela.ml.MaliciousAppClassifier
 import me.mendez.ela.notifications.SuspiciousAppChannel
 import me.mendez.ela.persistence.database.apps.SuspiciousAppDao
 import javax.inject.Inject
@@ -56,8 +56,10 @@ class PermissionCheck : BroadcastReceiver() {
         if (newForbidden.isEmpty()) {
             Log.i(TAG, "no new forbidden apps")
         } else {
-            Log.i(TAG, "found ${newForbidden.size} more forbidden apps.")
-            Log.d(TAG, "new forbidden apps: ${newForbidden.joinToString(", ") { it.packageName }}")
+            Log.d(
+                TAG,
+                "new forbidden apps (${newForbidden.size}): ${newForbidden.joinToString(", ") { it.packageName }}"
+            )
         }
 
         runBlocking {
@@ -83,16 +85,20 @@ class PermissionCheck : BroadcastReceiver() {
     }
 
     private fun getCurrentSuspiciousApps(context: Context): List<PackageInfo> {
-        val model = MaliciousAppClassificator(context)
-        model.load()
+        val classifier = MaliciousAppClassifier(context)
+        classifier.load()
 
         val packages = getAllPackages(context)
         val suspicious = packages
             .filter {
-                model.predict(it.packageName, it.requestedPermissions, 0.8f)
+                classifier.predict(
+                    it.packageName,
+                    it.requestedPermissions,
+                    0.8f
+                ) == MaliciousAppClassifier.Result.MALICIOUS
             }
 
-        model.destroy()
+        classifier.destroy()
         return suspicious
     }
 

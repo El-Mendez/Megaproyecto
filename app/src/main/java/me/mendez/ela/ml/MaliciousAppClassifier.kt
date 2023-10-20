@@ -1,17 +1,20 @@
-package me.mendez.ela.model
+package me.mendez.ela.ml
 
 import android.content.Context
 import android.util.Log
-import me.mendez.ela.ml.AppsModel
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 
 private const val TAG = "ELA_CLASS_SUSPICIOUS"
 
-class MaliciousAppClassificator(val context: Context) {
+class MaliciousAppClassifier(val context: Context) {
     private var model: AppsModel? = null
     private var buffer: TensorBuffer? = null
     private var permissionsMap: Map<String, Int>? = null
+
+    enum class Result {
+        MALICIOUS, BENIGN
+    }
 
     fun load() {
         if (model == null) {
@@ -51,7 +54,7 @@ class MaliciousAppClassificator(val context: Context) {
         return array
     }
 
-    fun predict(packageName: String, permissions: Array<String>, minConfidence: Float = 0.5f): Boolean {
+    fun predict(packageName: String, permissions: Array<String>, minConfidence: Float = 0.5f): Result {
         val input = encodePermissions(permissions)
         buffer!!.loadArray(input)
 
@@ -64,7 +67,7 @@ class MaliciousAppClassificator(val context: Context) {
 
         Log.d(TAG, "$packageName $confidence - ${if (malicious) "MALICIOUS" else "NOT MALICIOUS"}")
 
-        return confidence > minConfidence
+        return if (confidence > minConfidence) Result.MALICIOUS else Result.BENIGN
     }
 
 

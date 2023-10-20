@@ -68,7 +68,7 @@ class ElaVpnThread(private val service: ElaVpnService) {
 
         // we can recycle the old filtering model
         val filteringService = runningContext!!.filteringService
-        filteringService.elaSettings = settings.copy()
+        filteringService.recycle(settings)
 
         val consumers = Executors.newFixedThreadPool(2)
         val vpnInterface = startVpnInterface(builder)!!

@@ -1,8 +1,12 @@
 package me.mendez.ela.vpn
 
 import android.util.Log
+import kotlinx.coroutines.runBlocking
 import me.mendez.ela.ml.MaliciousDomainClassifier
+import me.mendez.ela.persistence.database.blocks.Block
+import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.persistence.settings.ElaSettings
+import me.mendez.ela.services.SuspiciousNotification
 import org.pcap4j.packet.*
 import org.xbill.DNS.*
 import java.io.FileOutputStream
@@ -26,7 +30,11 @@ private sealed interface ForwardAction {
     class DenyWithNotification(val reason: MaliciousDomainClassifier.Result) : ForwardAction
 }
 
-class DnsFilter(private val service: ElaVpnService, private var elaSettings: ElaSettings) {
+class DnsFilter(
+    private val service: ElaVpnService,
+    private var elaSettings: ElaSettings,
+    private var blockDao: BlockDao,
+) {
     private val domainClassifier = MaliciousDomainClassifier(service)
     private val upstreamDnsServer = Inet4Address.getByName("1.1.1.2")
     private val cache = ConcurrentHashMap<String, FilterStatus>()
@@ -38,9 +46,9 @@ class DnsFilter(private val service: ElaVpnService, private var elaSettings: Ela
     fun filter(request: ByteBuffer, output: FileOutputStream) {
         val (ipPacket, udpPacket, dnsPacket) = parseRawIpPacket(request) ?: return
 
-        when (shouldForward(dnsPacket)) {
+        when (val reason = shouldForward(dnsPacket)) {
             ForwardAction.FORWARD -> {
-                Log.i(TAG, "allow ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
+                Log.i(TAG, "allow ${dnsPacket.header.questions.joinToString(", ") { it.qName.name }}")
 
                 val response = ByteBufferPool.poll()
                 forwardAndWaitResponse(dnsPacket.rawData, response.array())
@@ -50,15 +58,26 @@ class DnsFilter(private val service: ElaVpnService, private var elaSettings: Ela
             }
 
             ForwardAction.DENY -> {
-                Log.i(TAG, "block ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
+                val domain = dnsPacket.header.questions.first().qName.name
+                Log.i(TAG, "block $domain")
                 val response = fakeNoAnswer(dnsPacket)
                 writeBack(ipPacket, udpPacket, response, output)
+
+                runBlocking {
+                    blockDao.insert(Block(domain, Date()))
+                }
             }
 
             is ForwardAction.DenyWithNotification -> {
-                Log.i(TAG, "block and notify ${dnsPacket.header.questions.joinToString(", ") { it.toString() }}")
+                val domain = dnsPacket.header.questions.first().qName.name
+                Log.i(TAG, "block and notify $domain")
+
                 val response = fakeNoAnswer(dnsPacket)
                 writeBack(ipPacket, udpPacket, response, output)
+                runBlocking {
+                    blockDao.insert(Block(domain, Date()))
+                }
+                SuspiciousNotification.createChat(service, domain, reason.reason)
             }
         }
     }

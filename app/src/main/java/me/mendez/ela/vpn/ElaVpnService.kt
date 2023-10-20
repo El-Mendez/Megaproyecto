@@ -13,6 +13,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import me.mendez.ela.notifications.VpnChannel
+import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import javax.inject.Inject
 
@@ -25,8 +26,11 @@ class ElaVpnService : VpnService() {
     }
 
     @Inject
+    lateinit var blockDao: BlockDao
+
+    @Inject
     lateinit var elaSettingsStore: DataStore<ElaSettings>
-    private val vpnThread = ElaVpnThread(this)
+    private var vpnThread: ElaVpnThread? = null
 
     companion object {
         @JvmStatic
@@ -70,6 +74,10 @@ class ElaVpnService : VpnService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (vpnThread == null) {
+            vpnThread = ElaVpnThread(this, blockDao)
+        }
+
         when (intent?.action) {
             Commands.START.toString() -> start()
             Commands.RESTART.toString() -> restart()
@@ -95,7 +103,7 @@ class ElaVpnService : VpnService() {
         )
 
         runBlocking {
-            vpnThread.start(
+            vpnThread!!.start(
                 Builder(),
                 elaSettingsStore.data.first()
             )
@@ -108,7 +116,7 @@ class ElaVpnService : VpnService() {
         Log.i(TAG, "restarting vpn")
 
         runBlocking {
-            vpnThread.restart(
+            vpnThread!!.restart(
                 Builder(),
                 elaSettingsStore.data.first()
             )
@@ -119,7 +127,7 @@ class ElaVpnService : VpnService() {
 
     private fun stop() {
         Log.i(TAG, "stopped vpn")
-        vpnThread.stop()
+        vpnThread!!.stop()
 
         runBlocking {
             showRunning(false, elaSettingsStore)
@@ -139,7 +147,7 @@ class ElaVpnService : VpnService() {
         }
 
         try {
-            vpnThread.stop()
+            vpnThread!!.stop()
         } catch (e: Exception) {
             Log.e(TAG, "could not force stop vpn")
         }

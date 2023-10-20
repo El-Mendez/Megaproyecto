@@ -5,6 +5,7 @@ import android.net.VpnService.Builder
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import me.mendez.ela.BuildConfig
+import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -22,7 +23,7 @@ private data class RunningContext(
 
 private const val TAG = "ELA_VPN"
 
-class ElaVpnThread(private val service: ElaVpnService) {
+class ElaVpnThread(private val service: ElaVpnService, private val blockDao: BlockDao) {
     private val running = AtomicBoolean(false)
     private var runningContext: RunningContext? = null
     private val lock = Any()
@@ -35,7 +36,7 @@ class ElaVpnThread(private val service: ElaVpnService) {
 
         running.set(true)
 
-        val filteringService = DnsFilter(service, settings.copy())
+        val filteringService = DnsFilter(service, settings.copy(), blockDao)
         val consumers = Executors.newFixedThreadPool(2)
         val vpnInterface = startVpnInterface(builder)!!
         val producer = producerThread(vpnInterface, consumers, filteringService)

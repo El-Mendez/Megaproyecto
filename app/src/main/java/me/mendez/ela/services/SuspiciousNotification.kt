@@ -17,6 +17,7 @@ import me.mendez.ela.notifications.SuspiciousTrafficChannel
 import me.mendez.ela.persistence.database.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.chat.ChatApi
+import me.mendez.ela.ml.MaliciousDomainClassifier
 import javax.inject.Inject
 
 private const val TAG = "ELA_NOTIFICATION_SERVICE"
@@ -48,10 +49,15 @@ class SuspiciousNotification : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) return
         val domain = intent.getStringExtra("domain") ?: return
-        val action = SuspiciousCommand.valueOf(intent.getStringExtra("action") ?: return)
+        val actionString = intent.getStringExtra("action") ?: return
+        Log.i(TAG, "new action: $actionString")
 
-        Log.i(TAG, "new action: $action")
+        if (actionString == "CREATE_CHAT") {
+            initializeChat(domain, context, intent)
+            return
+        }
 
+        val action = SuspiciousCommand.valueOf(actionString)
         when (action) {
             SuspiciousCommand.SUBMIT_FROM_NOTIFICATION -> messageFromNotification(domain, context, intent)
 
@@ -59,6 +65,15 @@ class SuspiciousNotification : BroadcastReceiver() {
 
             SuspiciousCommand.DISMISS_NOTIFICATION, SuspiciousCommand.DISMISS_BUBBLE ->
                 dismissNotification(domain, context)
+        }
+    }
+
+    private fun initializeChat(domain: String, context: Context, intent: Intent) {
+        val reasonString = intent.getStringExtra("reason") ?: return
+        val reason = MaliciousDomainClassifier.Result.valueOf(reasonString)
+
+        SuspiciousTrafficChannel.notify(context, domain.hashCode()) {
+            newSuspiciousTraffic(domain, "este tráfico es $reason")
         }
     }
 
@@ -126,6 +141,16 @@ class SuspiciousNotification : BroadcastReceiver() {
     }
 
     companion object {
+        fun createChat(context: Context, domain: String, reason: MaliciousDomainClassifier.Result) {
+            val intent = Intent(context, SuspiciousNotification::class.java).apply {
+                putExtra("action", "CREATE_CHAT")
+                putExtra("domain", domain)
+                putExtra("reason", reason.toString())
+            }
+
+            context.sendBroadcast(intent)
+        }
+
         fun broadcast(context: Context, domain: String, command: SuspiciousCommand): PendingIntent {
             return PendingIntent
                 .getBroadcast(

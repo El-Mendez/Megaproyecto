@@ -36,7 +36,7 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
     }
 
     private fun inWhitelist(target: String): Boolean {
-        return elaSettings.whitelist.contains(target)
+        return !elaSettings.whitelist.contains(target)
     }
 
     private fun forward(udpPacket: UdpPacket, dnsRequest: DnsPacket, ipPacket: IpPacket, output: FileOutputStream) {
@@ -63,6 +63,8 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
             .dstPort(udpPacket.header.srcPort)
             .srcAddr(ipPacket.header.dstAddr)
             .dstAddr(ipPacket.header.srcAddr)
+            .correctChecksumAtBuild(true)
+            .correctLengthAtBuild(true)
             .payloadBuilder(
                 UnknownPacket.Builder()
                     .rawData(rawDnsResponse)
@@ -70,7 +72,7 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
 
         val ipToWrite: IpPacket = when (ipPacket) {
             is IpV4Packet -> {
-                IpV4Packet.Builder()
+                IpV4Packet.Builder(ipPacket)
                     .srcAddr(ipPacket.header.dstAddr)
                     .dstAddr(ipPacket.header.srcAddr)
                     .correctChecksumAtBuild(true)
@@ -80,7 +82,7 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
             }
 
             is IpV6Packet -> {
-                IpV6Packet.Builder()
+                IpV6Packet.Builder(ipPacket)
                     .srcAddr(ipPacket.header.dstAddr)
                     .dstAddr(ipPacket.header.srcAddr)
                     .correctLengthAtBuild(true)
@@ -89,11 +91,12 @@ class DnsFilter(private val service: ElaVpnService, var elaSettings: ElaSettings
             }
 
             else -> {
-                Log.i(TAG, "no idea what this is supposed to be $ipPacket")
+                Log.i(TAG, "no idea what kind of package this is $ipPacket")
                 return
             }
         }
 
+        Log.i(TAG, "finished parsing thingy")
         Log.i(TAG, "req: $ipPacket \n\nres: $ipToWrite")
 
         output.write(ipToWrite.rawData, 0, ipToWrite.rawData.size)

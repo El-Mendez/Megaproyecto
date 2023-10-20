@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import me.mendez.ela.chat.Message
-import me.mendez.ela.remote.ChatApi
+import me.mendez.ela.chat.ChatApi
 import java.util.*
 import javax.inject.Inject
 
@@ -33,7 +33,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             calculatingResponse.value = true
             try {
-                val res = chatApi.getResponse(messages)
+                val res = chatApi.answer(messages)
                 messages.addAll(res)
             } catch (e: Exception) {
                 messages.add(

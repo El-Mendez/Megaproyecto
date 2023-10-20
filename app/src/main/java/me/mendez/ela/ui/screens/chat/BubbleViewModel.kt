@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import me.mendez.ela.chat.Message
 import me.mendez.ela.persistence.database.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
-import me.mendez.ela.remote.ChatApi
+import me.mendez.ela.chat.ChatApi
 
 
 class BubbleViewModel @AssistedInject constructor(
@@ -50,7 +50,7 @@ class BubbleViewModel @AssistedInject constructor(
                 .apply { add(userQuestion) }
 
             try {
-                val elaResponse = chatApi.getResponse(latestConversation).last()
+                val elaResponse = chatApi.answer(latestConversation).last()
                 messagesDao.addMessage(domain, elaResponse)
             } catch (e: Exception) {
                 messagesDao.addMessage(domain, Message("parece que no tienes conexión a internet", false))

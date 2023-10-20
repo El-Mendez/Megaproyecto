@@ -16,7 +16,7 @@ import me.mendez.ela.chat.Message
 import me.mendez.ela.notifications.SuspiciousTrafficChannel
 import me.mendez.ela.persistence.database.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
-import me.mendez.ela.remote.ChatApi
+import me.mendez.ela.chat.ChatApi
 import javax.inject.Inject
 
 private const val TAG = "ELA_NOTIFICATION_SERVICE"
@@ -85,7 +85,7 @@ class SuspiciousNotification : BroadcastReceiver() {
                 val conversation = messages
                     .toMutableList()
                     .apply { add(question) }
-                val response = chatApi.getResponse(conversation)
+                val response = chatApi.answer(conversation)
                 messageDao.addMessage(domain, response.last())
                 response.last()
             } catch (e: Exception) {

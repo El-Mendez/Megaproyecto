@@ -59,7 +59,7 @@ class ChatApi(
     companion object {
         private const val BASE_URL = "https://api.openai.com/v1"
         private const val CHAT_URL = "$BASE_URL/chat/completions"
-        private const val MODEL = "gpt-3.5-turbo"
+        private const val MODEL = "ft:gpt-3.5-turbo-0613:ela:ela:8BkjWG5l"
 
         fun create(): ChatApi {
             return ChatApi(

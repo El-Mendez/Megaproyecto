@@ -64,7 +64,7 @@ class PermissionCheck : BroadcastReceiver() {
             suspiciousAppDao.setSuspiciousApps(currentForbidden)
         }
 
-//        if (newForbidden.isEmpty()) return
+        if (newForbidden.isEmpty()) return
 
         SuspiciousAppChannel.notify(
             context,
@@ -89,7 +89,7 @@ class PermissionCheck : BroadcastReceiver() {
         val packages = getAllPackages(context)
         val suspicious = packages
             .filter {
-                model.predict(it.requestedPermissions)
+                model.predict(it.packageName, it.requestedPermissions, 0.8f)
             }
 
         model.destroy()

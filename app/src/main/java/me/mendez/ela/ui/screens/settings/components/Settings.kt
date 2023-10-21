@@ -29,7 +29,7 @@ fun Settings(
             title = "Bloquear conexiones",
             text = "Automáticamente bloquear el tráfico tráfico sospechoso.",
             isOn = settings.blockDefault,
-            isEnabled = settings.vpnRunning,
+            isEnabled = true,
             onToggle = {
                 update { old ->
                     old.copy(blockDefault = it)

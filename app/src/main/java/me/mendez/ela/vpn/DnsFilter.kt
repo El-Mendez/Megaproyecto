@@ -45,20 +45,36 @@ class DnsFilter(
 
         if (dnsPacket.header.isResponse) return
 
+        var rawResponse: ByteBuffer? = null
+
+        if (!elaSettings.blockDefault) {
+            rawResponse = ByteBufferPool.poll()
+            forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
+        }
+
         // if cached
         when (checkCache(dnsPacket)) {
             true -> {
                 Log.i(TAG, "allow $domain (cache)")
-                val response = ByteBufferPool.poll()
-                forwardAndWaitResponse(dnsPacket.rawData, response.array())
-                writeBack(ipPacket, udpPacket, response.array(), output)
-                ByteBufferPool.put(response)
+                if (rawResponse == null) {
+                    rawResponse = ByteBufferPool.poll()
+                    forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
+                }
+
+                writeBack(ipPacket, udpPacket, rawResponse.array(), output)
+                ByteBufferPool.put(rawResponse)
                 return
             }
 
             false -> {
                 Log.i(TAG, "block $domain (cache)")
-                writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
+                if (rawResponse == null) {
+                    writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
+                } else {
+                    writeBack(ipPacket, udpPacket, rawResponse.array(), output)
+                    ByteBufferPool.put(rawResponse)
+                }
+
                 runBlocking {
                     blockDao.insert(Block(domain, Date()))
                 }
@@ -69,8 +85,11 @@ class DnsFilter(
         }
 
         // not cached, manually check the packet
-        val rawResponse = ByteBufferPool.poll()
-        forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
+        if (rawResponse == null) {
+            rawResponse = ByteBufferPool.poll()
+            forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
+        }
+
         val response = DnsPacket.newPacket(rawResponse.array(), 0, rawResponse.array().size)
         val whoisData = getWhoisData(domain)
 
@@ -83,7 +102,11 @@ class DnsFilter(
         } else {
             putInCache(domain, false)
             Log.i(TAG, "blocked $domain ($linkType)")
-            writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
+            if (elaSettings.blockDefault) {
+                writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
+            } else {
+                writeBack(ipPacket, udpPacket, rawResponse.array(), output)
+            }
             SuspiciousNotification.createChat(service, domain, linkType)
             runBlocking {
                 blockDao.insert(Block(domain, Date()))

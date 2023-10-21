@@ -54,8 +54,9 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         }
 
         // stop old jobs
-        endProducer(runningContext!!.producer)
         endConsumers(runningContext!!.consumers)
+        endProducer(runningContext!!.producer)
+        Thread.sleep(2000)
         closeVpnInterface(runningContext!!.vpnInterface)
 
 
@@ -94,9 +95,9 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         val input = FileInputStream(vpnInterface.fileDescriptor)
         val output = FileOutputStream(vpnInterface.fileDescriptor)
 
-        while (running.get()) {
-            val buffer = ByteBufferPool.poll()
-            try {
+        try {
+            while (running.get()) {
+                val buffer = ByteBufferPool.poll()
                 val size = input.read(buffer.array())
 
                 if (size <= 0)
@@ -106,11 +107,10 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
                     filter.filter(buffer, output)
                     ByteBufferPool.put(buffer)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "vpn thread exception $e")
-                buffer.clear()
-                ByteBufferPool.put(buffer)
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "error on vpn. Stopping. $e")
+            running.set(false)
         }
     }
 
@@ -169,5 +169,6 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         val finished = consumers.awaitTermination(2000, TimeUnit.MILLISECONDS)
         if (!finished)
             consumers.shutdownNow()
+        Thread.sleep(2000)
     }
 }

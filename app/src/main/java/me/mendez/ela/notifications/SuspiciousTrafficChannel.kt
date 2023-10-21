@@ -64,7 +64,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
             ).setPerson(ela(context))
             .build()
 
-        ShortcutManagerCompat.addDynamicShortcuts(context, mutableListOf(shortcut))
+        ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
     }
 
     fun addMessageToChat(context: Context, domain: String, message: String, user: Boolean) {

@@ -18,7 +18,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import me.mendez.ela.persistence.settings.ActionNeeded
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.persistence.settings.nextAction
@@ -40,27 +39,25 @@ class SettingsViewModel @Inject constructor(
         askPermissionContract: ActivityResultLauncher<String>,
         startActivityForResultContract: ActivityResultLauncher<Intent>
     ) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                when (dataStore.nextAction(updater)) {
-                    ActionNeeded.START -> {
-                        Log.i(TAG, "attempting to start vpn")
-                        tryActivateVpn(context, askPermissionContract, startActivityForResultContract)
-                    }
+        viewModelScope.launch(Dispatchers.IO) {
+            when (dataStore.nextAction(updater)) {
+                ActionNeeded.START -> {
+                    Log.i(TAG, "attempting to start vpn")
+                    tryActivateVpn(context, askPermissionContract, startActivityForResultContract)
+                }
 
-                    ActionNeeded.STOP -> {
-                        Log.i(TAG, "stopping vpn")
-                        ElaVpnService.sendStop(context)
-                    }
+                ActionNeeded.STOP -> {
+                    Log.i(TAG, "stopping vpn")
+                    ElaVpnService.sendStop(context)
+                }
 
-                    ActionNeeded.RESTART -> {
-                        Log.i(TAG, "changes were made when it was on. Trying to restart service.")
-                        ElaVpnService.sendRestart(context)
-                    }
+                ActionNeeded.RESTART -> {
+                    Log.i(TAG, "changes were made when it was on. Trying to restart service.")
+                    ElaVpnService.sendRestart(context)
+                }
 
-                    ActionNeeded.NONE -> {
-                        Log.i(TAG, "changes were made but it was off. Nothing to do.")
-                    }
+                ActionNeeded.NONE -> {
+                    Log.i(TAG, "changes were made but it was off. Nothing to do.")
                 }
             }
         }
@@ -112,7 +109,9 @@ class SettingsViewModel @Inject constructor(
         if (result.resultCode == Activity.RESULT_OK) {
             Log.d(TAG, "vpn permissions granted")
             Log.i(TAG, "Vpn is ready to start!")
-            ElaVpnService.sendStart(context)
+            viewModelScope.launch(Dispatchers.IO) {
+                ElaVpnService.sendStart(context)
+            }
         } else {
             Log.i(TAG, "vpn permissions denied")
             cancelVpnStartRequest(dataStore)

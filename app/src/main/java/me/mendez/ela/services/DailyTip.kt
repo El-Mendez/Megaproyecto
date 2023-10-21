@@ -5,18 +5,32 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import kotlinx.coroutines.runBlocking
+import me.mendez.ela.chat.ChatApi
+import me.mendez.ela.chat.Message
 import me.mendez.ela.notifications.DailyTipChannel
 import java.util.*
+import javax.inject.Inject
 
 class DailyTip : BroadcastReceiver() {
+    @Inject
+    private lateinit var chatApi: ChatApi
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null) return
+
+        val response = runBlocking {
+            chatApi.answer(
+                listOf(Message("dame un dato interesante de ciberseguridad", true, Date()))
+            )
+        }
+
+        if (response.isEmpty()) return
 
         DailyTipChannel.notify(
             context,
             DailyTipChannel.TIP_ID,
         ) {
-            newDailyTip("¡Hola mundo!")
+            newDailyTip(response.first().content)
         }
     }
 

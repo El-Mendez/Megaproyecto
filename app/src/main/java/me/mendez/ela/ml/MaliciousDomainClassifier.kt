@@ -116,3 +116,9 @@ class MaliciousDomainClassifier(val context: Context) {
 fun MaliciousDomainClassifier.Result.isBenign(): Boolean {
     return this == MaliciousDomainClassifier.Result.BENIGN
 }
+
+fun MaliciousDomainClassifier.Result.prompt(domain: String): String {
+    return when (this) {
+        MaliciousDomainClassifier.Result.BENIGN -> "dame un dato interesante de ciberseguridad"
+    }
+}

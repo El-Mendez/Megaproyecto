@@ -7,17 +7,16 @@ import android.content.Intent
 import android.util.Log
 import androidx.datastore.core.DataStore
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import me.mendez.ela.chat.Message
 import me.mendez.ela.notifications.SuspiciousTrafficChannel
 import me.mendez.ela.persistence.database.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.chat.ChatApi
 import me.mendez.ela.ml.MaliciousDomainClassifier
+import me.mendez.ela.ml.prompt
+import java.util.*
 import javax.inject.Inject
 
 private const val TAG = "ELA_NOTIFICATION_SERVICE"
@@ -72,8 +71,21 @@ class SuspiciousNotification : BroadcastReceiver() {
         val reasonString = intent.getStringExtra("reason") ?: return
         val reason = MaliciousDomainClassifier.Result.valueOf(reasonString)
 
+        val text = runBlocking {
+            val response = chatApi.answer(
+                listOf(Message(reason.prompt(domain), true, Date()))
+            ).firstOrNull() ?: Message(
+                "Vaya, parece que no tienes internet. No puedo darte tips de ciberseguridad hasta que vuelvas a conectarte",
+                false,
+                Date()
+            )
+            messageDao.addMessage(domain, response)
+
+            response.content
+        }
+
         SuspiciousTrafficChannel.notify(context, domain.hashCode()) {
-            newSuspiciousTraffic(domain, "este tráfico es $reason")
+            newSuspiciousTraffic(domain, text)
         }
     }
 

@@ -16,6 +16,7 @@ import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.chat.ChatApi
 import me.mendez.ela.ml.MaliciousDomainClassifier
 import me.mendez.ela.ml.prompt
+import me.mendez.ela.vpn.ElaVpnService
 import java.util.*
 import javax.inject.Inject
 
@@ -134,11 +135,14 @@ class SuspiciousNotification : BroadcastReceiver() {
             context,
             domain.hashCode()
         )
-        CoroutineScope(Dispatchers.IO + supervisor).launch {
+
+        runBlocking {
             elaSettingsStore.updateData {
                 it.withAddedInWhitelist(domain)
             }
         }
+
+        ElaVpnService.sendRestart(context)
     }
 
     private fun dismissNotification(domain: String, context: Context) {

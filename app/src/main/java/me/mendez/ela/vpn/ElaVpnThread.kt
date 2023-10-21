@@ -69,6 +69,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         val vpnInterface = startVpnInterface(builder)!!
         val producer = producerThread(vpnInterface, consumers, filteringService)
 
+        producer.start()
         runningContext = RunningContext(vpnInterface, producer, consumers, filteringService)
     }
 

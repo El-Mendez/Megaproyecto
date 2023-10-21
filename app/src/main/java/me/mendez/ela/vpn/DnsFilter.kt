@@ -141,14 +141,12 @@ class DnsFilter(
         when (cached) {
             is FilterStatus.Allowed -> {
                 if (cached.date + MAX_ALLOWED_CACHE_TIME >= Date().time) {
-                    Log.d(TAG, "allowed cache hit for $question")
                     return true
                 }
             }
 
             is FilterStatus.NotAllowed -> {
                 if (cached.date + MAX_FORBIDDEN_CACHE_TIME >= Date().time) {
-                    Log.d(TAG, "forbidden cache hit for $question")
                     return false
                 }
             }

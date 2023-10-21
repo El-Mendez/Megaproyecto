@@ -17,7 +17,7 @@ import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import javax.inject.Inject
 
-private const val TAG = "VPN"
+private const val TAG = "ELA_VPN_SERVICE"
 
 @AndroidEntryPoint
 class ElaVpnService : VpnService() {
@@ -37,7 +37,9 @@ class ElaVpnService : VpnService() {
         suspend fun showRunning(store: DataStore<ElaSettings>, running: Boolean? = null, ready: Boolean? = null) {
             if (running == null && ready == null) return
 
-            store.updateData { it.copy(vpnRunning = running ?: it.vpnRunning, ready = ready ?: it.ready) }
+            store.updateData {
+                it.copy(vpnRunning = running ?: it.vpnRunning, ready = ready ?: it.ready)
+            }
         }
 
         @JvmStatic
@@ -105,12 +107,14 @@ class ElaVpnService : VpnService() {
         )
 
         runBlocking {
+            showRunning(elaSettingsStore, running = true, ready = false)
+
             vpnThread!!.start(
                 Builder(),
                 elaSettingsStore.data.first()
             )
 
-            showRunning(true, elaSettingsStore)
+            showRunning(elaSettingsStore, ready = true)
         }
     }
 
@@ -118,21 +122,24 @@ class ElaVpnService : VpnService() {
         Log.i(TAG, "restarting vpn")
 
         runBlocking {
+            showRunning(elaSettingsStore, ready = false)
+
             vpnThread!!.restart(
                 Builder(),
                 elaSettingsStore.data.first()
             )
 
-            showRunning(true, elaSettingsStore)
+            showRunning(elaSettingsStore, ready = true)
         }
     }
 
     private fun stop() {
-        Log.i(TAG, "stopped vpn")
-        vpnThread!!.stop()
-
+        Log.i(TAG, "stopping vpn")
         runBlocking {
-            showRunning(false, elaSettingsStore)
+            showRunning(elaSettingsStore, running = false, ready = false)
+            vpnThread!!.stop()
+
+            showRunning(elaSettingsStore, running = false, ready = true)
         }
 
         stopSelf()
@@ -153,6 +160,7 @@ class ElaVpnService : VpnService() {
         } catch (e: Exception) {
             Log.e(TAG, "could not force stop vpn")
         }
+
         stop()
     }
 }

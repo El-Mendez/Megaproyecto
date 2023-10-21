@@ -80,12 +80,15 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
             return
         }
 
-        Log.d(TAG, "Stopping thread")
-
+        Log.d(TAG, "Stopping producers")
         endProducer(runningContext!!.producer)
+        Log.d(TAG, "Stopping consumer")
         endConsumers(runningContext!!.consumers)
+        Log.d(TAG, "Stopping vpnInterface")
         closeVpnInterface(runningContext!!.vpnInterface)
+        Log.d(TAG, "destroying filtering service")
         runningContext!!.filteringService.destroy()
+        Log.d(TAG, "destroying done destroying")
 
         runningContext = null
     }

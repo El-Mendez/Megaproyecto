@@ -15,8 +15,8 @@ import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import me.mendez.ela.persistence.settings.ActionNeeded
 import me.mendez.ela.persistence.settings.ElaSettings
@@ -39,7 +39,9 @@ class SettingsViewModel @Inject constructor(
         askPermissionContract: ActivityResultLauncher<String>,
         startActivityForResultContract: ActivityResultLauncher<Intent>
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
+            if (!state.first().ready) return@launch
+
             when (dataStore.nextAction(updater)) {
                 ActionNeeded.START -> {
                     Log.i(TAG, "attempting to start vpn")
@@ -109,9 +111,7 @@ class SettingsViewModel @Inject constructor(
         if (result.resultCode == Activity.RESULT_OK) {
             Log.d(TAG, "vpn permissions granted")
             Log.i(TAG, "Vpn is ready to start!")
-            viewModelScope.launch(Dispatchers.IO) {
-                ElaVpnService.sendStart(context)
-            }
+            ElaVpnService.sendStart(context)
         } else {
             Log.i(TAG, "vpn permissions denied")
             cancelVpnStartRequest(dataStore)
@@ -120,7 +120,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun cancelVpnStartRequest(dataStore: DataStore<ElaSettings>) {
         viewModelScope.launch {
-            ElaVpnService.showRunning(false, dataStore)
+            ElaVpnService.showRunning(dataStore, running = false)
         }
     }
 

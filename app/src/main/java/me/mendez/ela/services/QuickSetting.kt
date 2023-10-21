@@ -42,7 +42,9 @@ class QuickSetting : TileService() {
         super.onClick()
 
         if (state.vpnRunning) {
-            ElaVpnService.sendStop(this)
+            runBlocking {
+                ElaVpnService.sendStop(this@QuickSetting)
+            }
             return
         }
 
@@ -51,7 +53,9 @@ class QuickSetting : TileService() {
             return
         }
 
-        ElaVpnService.sendStart(this)
+        runBlocking {
+            ElaVpnService.sendStart(this@QuickSetting)
+        }
     }
 
     override fun onDestroy() {

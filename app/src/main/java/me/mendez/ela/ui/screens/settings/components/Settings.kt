@@ -15,7 +15,7 @@ fun Settings(
     Column(modifier) {
         SettingItem(
             title = "Activar Protección",
-            text = "Automáticamente bloquear el tráfico tráfico sospechoso.",
+            text = "Ela supervisará tu tráfico red.",
             isOn = settings.vpnRunning,
             onToggle = {
                 update { old ->

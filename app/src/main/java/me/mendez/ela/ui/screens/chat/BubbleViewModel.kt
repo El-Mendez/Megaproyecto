@@ -11,6 +11,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import me.mendez.ela.chat.Message
 import me.mendez.ela.persistence.database.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
@@ -63,7 +64,7 @@ class BubbleViewModel @AssistedInject constructor(
 
     fun addToWhitelist(state: Boolean) {
         if (state) {
-            viewModelScope.launch {
+            runBlocking {
                 elaSettingsStore.updateData {
                     it.withAddedInWhitelist(domain)
                 }

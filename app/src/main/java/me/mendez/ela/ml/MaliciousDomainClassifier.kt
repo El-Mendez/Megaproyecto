@@ -35,6 +35,8 @@ class MaliciousDomainClassifier(val context: Context) {
         val input = encode(domain, response, whois)
         Log.d(TAG, "$domain: [${input.joinToString(", ") { it.toString() }}]")
 
+        return Result.BENIGN
+
         return synchronized(lock) {
             buffer!!.loadArray(input)
             Result.BENIGN
@@ -96,36 +98,28 @@ class MaliciousDomainClassifier(val context: Context) {
         }
 
         private fun numAmount(domain: String): Float {
-            return domain.count { "012345679".contains(it) }.toFloat()
+            return charAmount(domain, "123456789")
         }
 
         private fun letterAmount(domain: String): Float {
-            return domain.count { "abcdefghijklmopqrstuvwxyz".contains(it.lowercaseChar()) }.toFloat()
+            return charAmount(domain, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
         }
 
         private fun symbolAmount(domain: String): Float {
-            return domain.count { "-_".contains(it.lowercaseChar()) }.toFloat()
+            return charAmount(domain, "-_")
         }
 
+
         private fun consecutiveNumbers(domain: String): Float {
-            return "[0-9]+".toRegex()
-                .findAll(domain)
-                .maxBy { it.value.length }
-                .value.length.toFloat()
+            return consecutiveChars(domain, "1234567890")
         }
 
         private fun consecutiveLetters(domain: String): Float {
-            return "[a-zA-Z]+".toRegex()
-                .findAll(domain)
-                .maxBy { it.value.length }
-                .value.length.toFloat()
+            return consecutiveChars(domain, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
         }
 
         private fun consecutiveSymbols(domain: String): Float {
-            return "[_\\-]+".toRegex()
-                .findAll(domain)
-                .maxBy { it.value.length }
-                .value.length.toFloat()
+            return consecutiveChars(domain, "-_")
         }
 
         private fun domainSize(domain: String): Float = domain.length.toFloat()
@@ -158,6 +152,35 @@ class MaliciousDomainClassifier(val context: Context) {
 
             val formatter = DateTimeFormat.forPattern("yyyy-MM-dd")
             return DateTime.parse(string, formatter)
+        }
+
+        private fun charAmount(domain: String, chars: String): Float {
+            var amount = 0
+            domain.forEach {
+                if (chars.contains(it))
+                    amount += 1
+            }
+            return amount.toFloat()
+        }
+
+        private fun consecutiveChars(domain: String, chars: String): Float {
+            var chain = 0
+            var longestChain = 0
+
+            domain.forEach {
+                if (chars.contains(it)) {
+                    chain += 1
+                } else {
+                    if (chain > longestChain)
+                        longestChain = chain
+                    chain = 0
+                }
+            }
+
+            if (chain > longestChain)
+                longestChain = chain
+
+            return longestChain.toFloat()
         }
     }
 }

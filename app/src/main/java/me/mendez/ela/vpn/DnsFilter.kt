@@ -267,12 +267,18 @@ class DnsFilter(
                     .joinToString(".") { it }
             }
 
-            val whois = WhoisClient()
-            whois.connect(WhoisClient.DEFAULT_HOST)
-            val result = whois.query(topDomain).toString()
-            whois.disconnect()
+            return try {
+                Log.d(TAG, "starting whois request for $domain ($topDomain)")
+                val whois = WhoisClient()
+                whois.connect(WhoisClient.DEFAULT_HOST)
+                val result = whois.query(topDomain).toString()
+                whois.disconnect()
+                Log.d(TAG, "finish whois request for $domain")
 
-            return result
+                result
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 }

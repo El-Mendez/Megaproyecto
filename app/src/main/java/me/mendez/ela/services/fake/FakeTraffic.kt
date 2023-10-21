@@ -9,8 +9,10 @@ private const val TAG = "ELA_FAKE_TRAFFIC"
 
 class FakeTraffic : TileService() {
     override fun onClick() {
+        val domains = listOf("ejemplo.com", "ejemplo2.com", "ejemplo3.com")
+
         Log.i(TAG, "Starting fake notification")
-        val domain = "ejemplo.com"
+        val domain = domains.random()
         Thread.sleep(3000)
 
         SuspiciousNotification.createChat(

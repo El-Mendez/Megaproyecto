@@ -1,12 +1,17 @@
 package me.mendez.ela.ml
 
 import android.content.Context
-import io.mailguru.whois.model.WhoisResult
-import io.mailguru.whois.service.WhoisService
+import android.util.Log
+import org.joda.time.DateTime
+import org.joda.time.Days
+import org.joda.time.Years
+import org.joda.time.format.DateTimeFormat
 import org.pcap4j.packet.DnsPacket
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import kotlin.math.ln
+
+private const val TAG = "ELA_DOMAIN_CLASSIFIER"
 
 class MaliciousDomainClassifier(val context: Context) {
     private var buffer: TensorBuffer? = null
@@ -26,22 +31,9 @@ class MaliciousDomainClassifier(val context: Context) {
 
     }
 
-    fun predict(domain: String, response: DnsPacket): Result {
-        val segments = domain.split(".")
-        if (segments.isEmpty()) return Result.BENIGN
-
-        val topDomain = if (segments.last().isEmpty()) {
-            segments
-                .slice(maxOf(0, segments.size - 3)..<segments.size)
-                .joinToString(".") { it }
-        } else {
-            segments
-                .slice(maxOf(0, segments.size - 2)..<segments.size)
-                .joinToString(".") { it }
-        }
-
-        val result = WhoisService.lookup(topDomain)
-        val input = encode(domain, response, result)
+    fun predict(domain: String, response: DnsPacket, whois: String?): Result {
+        val input = encode(domain, response, whois)
+        Log.d(TAG, "$domain: [${input.joinToString(", ") { it.toString() }}]")
 
         return synchronized(lock) {
             buffer!!.loadArray(input)
@@ -50,11 +42,17 @@ class MaliciousDomainClassifier(val context: Context) {
     }
 
 
-    private fun encode(domain: String, response: DnsPacket, whois: WhoisResult?): FloatArray {
+    private fun encode(
+        domain: String,
+        response: DnsPacket,
+        whois: String?,
+    ): FloatArray {
+        val (expiration, updated, creation) = extractWhoisData(whois)
+
         return listOf(
             associatedIps(response),
-            lifetime(whois),
-            activeLifetime(whois),
+            lifetime(creation, expiration),
+            activeLifetime(creation, updated),
             entropy(domain),
             numAmount(domain),
             letterAmount(domain),
@@ -72,23 +70,18 @@ class MaliciousDomainClassifier(val context: Context) {
             return response.header.answers.size.toFloat()
         }
 
-        private fun lifetime(whois: WhoisResult?): Float {
-            return if (whois == null) {
-                // expiración - creación (años)
-                0f
-            } else {
-                TODO()
-            }
+        private fun lifetime(creationDate: DateTime?, expirationDateTime: DateTime?): Float {
+            if (creationDate == null || expirationDateTime == null) return 0f
+
+            return Years.yearsBetween(creationDate, expirationDateTime).years.toFloat()
         }
 
-        private fun activeLifetime(whois: WhoisResult?): Float {
-            // actualización - creación (días)
-            return if (whois == null) {
-                -1f
-            } else {
-                TODO()
-            }
+        private fun activeLifetime(creationDate: DateTime?, lastUpdatedDate: DateTime?): Float {
+            if (creationDate == null || lastUpdatedDate == null) return -1f
+
+            return Days.daysBetween(creationDate, lastUpdatedDate).days.toFloat()
         }
+
 
         private fun entropy(domain: String): Float {
             val occurrences = mutableMapOf<Char, Int>()
@@ -136,6 +129,36 @@ class MaliciousDomainClassifier(val context: Context) {
         }
 
         private fun domainSize(domain: String): Float = domain.length.toFloat()
+
+        private fun extractWhoisData(whoisValue: String?): Triple<DateTime?, DateTime?, DateTime?> {
+            if (whoisValue == null)
+                return Triple(null, null, null)
+
+            val date = "\\d{4}-\\d{1,2}-\\d{1,2}"
+
+            val creationDateRegex = "Creation Date: $date".toRegex()
+            val updatedDateRegex = "Updated Date: $date".toRegex()
+            val expirationDateRegex =
+                "((Registrar Registration Expiration Date)|(Registry Expiry Date)): $date".toRegex()
+
+            return try {
+                Triple(
+                    findAndParseDate(whoisValue, expirationDateRegex),
+                    findAndParseDate(whoisValue, updatedDateRegex),
+                    findAndParseDate(whoisValue, creationDateRegex),
+                )
+            } catch (e: Exception) {
+                Triple(null, null, null)
+            }
+        }
+
+        private fun findAndParseDate(whois: String, expression: Regex): DateTime? {
+            val line = expression.find(whois)?.value ?: return null
+            val string = line.split(" ").lastOrNull() ?: return null
+
+            val formatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+            return DateTime.parse(string, formatter)
+        }
     }
 }
 

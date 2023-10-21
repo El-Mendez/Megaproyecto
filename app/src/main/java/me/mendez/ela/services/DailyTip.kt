@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 class DailyTip : BroadcastReceiver() {
     @Inject
-    private lateinit var chatApi: ChatApi
+    lateinit var chatApi: ChatApi
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null) return
 

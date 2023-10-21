@@ -110,7 +110,10 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite-metadata:0.1.0'
 
     // whois
-    implementation 'io.mailguru:whois-parser:1.0.3'
+    implementation 'commons-net:commons-net:3.10.0'
+
+    // datetimes when running on low level apis suck
+    implementation 'joda-time:joda-time:2.12.5'
 }
 
 kapt {

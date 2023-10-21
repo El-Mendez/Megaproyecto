@@ -8,6 +8,7 @@ import me.mendez.ela.persistence.database.blocks.Block
 import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.services.SuspiciousNotification
+import org.apache.commons.net.whois.WhoisClient
 import org.pcap4j.packet.*
 import org.xbill.DNS.*
 import java.io.FileOutputStream
@@ -44,8 +45,6 @@ class DnsFilter(
 
         if (dnsPacket.header.isResponse) return
 
-        val cachedPermissionToGo = checkCache(dnsPacket)
-
         // if cached
         when (checkCache(dnsPacket)) {
             true -> {
@@ -73,13 +72,17 @@ class DnsFilter(
         val rawResponse = ByteBufferPool.poll()
         forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
         val response = DnsPacket.newPacket(rawResponse.array(), 0, rawResponse.array().size)
+        val whoisData = getWhoisData(domain)
 
-        val linkType = domainClassifier.predict(domain, response)
+        val linkType = domainClassifier.predict(domain, response, whoisData)
+
         if (linkType.isBenign()) {
             putInCache(domain, true)
+            Log.i(TAG, "allow $domain")
             writeBack(ipPacket, udpPacket, rawResponse.array(), output)
         } else {
             putInCache(domain, false)
+            Log.i(TAG, "blocked $domain ($linkType)")
             writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
             SuspiciousNotification.createChat(service, domain, linkType)
             runBlocking {
@@ -248,6 +251,28 @@ class DnsFilter(
             } catch (e: Exception) {
                 null
             }
+        }
+
+        private fun getWhoisData(domain: String): String? {
+            val segments = domain.split(".")
+            if (segments.isEmpty()) return null
+
+            val topDomain = if (segments.last().isEmpty()) {
+                segments
+                    .slice(maxOf(0, segments.size - 3)..<segments.size)
+                    .joinToString(".") { it }
+            } else {
+                segments
+                    .slice(maxOf(0, segments.size - 2)..<segments.size)
+                    .joinToString(".") { it }
+            }
+
+            val whois = WhoisClient()
+            whois.connect(WhoisClient.DEFAULT_HOST)
+            val result = whois.query(topDomain).toString()
+            whois.disconnect()
+
+            return result
         }
     }
 }

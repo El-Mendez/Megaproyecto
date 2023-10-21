@@ -30,7 +30,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
 
     fun start(builder: VpnService.Builder, settings: ElaSettings) = synchronized(lock) {
         if (runningContext != null) {
-            Log.w(TAG, "could not restart execution because it was already running.")
+            Log.w(TAG, "could not start execution because it was already running.")
             return
         }
 
@@ -42,6 +42,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         val producer = producerThread(vpnInterface, consumers, filteringService)
 
         producer.start()
+        Log.i(TAG, "vpn has started successfully")
         runningContext = RunningContext(vpnInterface, producer, consumers, filteringService)
     }
 
@@ -57,6 +58,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         endConsumers(runningContext!!.consumers)
         endProducer(runningContext!!.producer)
         closeVpnInterface(runningContext!!.vpnInterface)
+        Log.i(TAG, "cleaned old VPN resources")
 
         // start new jobs
         running.set(true)
@@ -70,6 +72,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         val producer = producerThread(vpnInterface, consumers, filteringService)
 
         producer.start()
+        Log.i(TAG, "vpn is reactivated")
         runningContext = RunningContext(vpnInterface, producer, consumers, filteringService)
     }
 
@@ -81,16 +84,14 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
             return
         }
 
-        Log.d(TAG, "Stopping producers")
         endProducer(runningContext!!.producer)
-        Log.d(TAG, "Stopping consumer")
         endConsumers(runningContext!!.consumers)
-        Log.d(TAG, "Stopping vpnInterface")
         closeVpnInterface(runningContext!!.vpnInterface)
         Log.d(TAG, "destroying filtering service")
         runningContext!!.filteringService.destroy()
-        Log.d(TAG, "destroying done destroying")
 
+        Log.d(TAG, "clean up done")
+        Log.i(TAG, "vpn is deactivated")
         runningContext = null
     }
 
@@ -104,7 +105,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
                 val size = input.read(buffer.array())
 
                 if (size <= 0)
-                    Log.i(TAG, "got empty packet!")
+                    Log.d(TAG, "got empty packet!")
 
                 consumers.submit {
                     if (running.get()) {
@@ -137,13 +138,14 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
     }
 
     private fun endProducer(thread: Thread) {
+        Log.d(TAG, "trying to stop producer")
         thread.interrupt()
 
         try {
             thread.join(5000)
-            Log.d(TAG, "joined old vpn thread")
+            Log.d(TAG, "stopped producer thread")
         } catch (e: Exception) {
-            Log.e(TAG, "could not join thread $e")
+            Log.e(TAG, "gave up joining producer thread $e")
         }
     }
 
@@ -170,9 +172,14 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
     }
 
     private fun endConsumers(consumers: ExecutorService) {
+        Log.d(TAG, "trying to stop consumers")
         consumers.shutdown()
         val finished = consumers.awaitTermination(5000, TimeUnit.MILLISECONDS)
-        if (!finished)
+        if (finished) {
+            Log.d(TAG, "consumers stopped!")
+        } else {
+            Log.e(TAG, "Did not stop gracefully on time. Forcing consumers to stop.")
             consumers.shutdownNow()
+        }
     }
 }

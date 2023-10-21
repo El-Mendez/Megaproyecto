@@ -1,6 +1,5 @@
 package me.mendez.ela.ui.screens.chat
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
@@ -59,7 +58,6 @@ class BubbleViewModel @AssistedInject constructor(
 
             calculatingResponse.value = false
         }
-        Log.d("ChatScreen", "sending message :$content")
     }
 
     fun addToWhitelist(state: Boolean) {

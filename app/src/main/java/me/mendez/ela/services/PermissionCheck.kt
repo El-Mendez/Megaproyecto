@@ -25,11 +25,12 @@ class PermissionCheck : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
         if (!ACTIONS_TO_LISTEN.contains(intent?.action)) {
-            Log.i(TAG, "unknown intent action: ${intent?.action}")
+            Log.e(TAG, "unknown intent action: ${intent?.action}")
             return
         }
 
         runBlocking {
+            Log.i(TAG, "checking app permissions")
             checkForNewSuspiciousApps(context)
         }
     }
@@ -56,7 +57,7 @@ class PermissionCheck : BroadcastReceiver() {
         if (newForbidden.isEmpty()) {
             Log.i(TAG, "no new forbidden apps")
         } else {
-            Log.d(
+            Log.i(
                 TAG,
                 "new forbidden apps (${newForbidden.size}): ${newForbidden.joinToString(", ") { it.packageName }}"
             )
@@ -150,7 +151,7 @@ class PermissionCheck : BroadcastReceiver() {
         }
 
         fun notify(context: Context) {
-            Log.i(TAG, "notifying new app install")
+            Log.d(TAG, "package was changed!")
             val intent = Intent(context, PermissionCheck::class.java)
             intent.action = NOTIFY_PACKAGE_CHANGE
             context.sendBroadcast(intent)

@@ -13,7 +13,13 @@ class FakeTraffic : TileService() {
 
         Log.i(TAG, "Starting fake notification")
         val domain = domains.random()
-        Thread.sleep(3000)
+
+        Log.d(TAG, "3")
+        Thread.sleep(1000)
+        Log.d(TAG, "2")
+        Thread.sleep(1000)
+        Log.d(TAG, "1")
+        Thread.sleep(1000)
 
         SuspiciousNotification.createChat(
             this,
@@ -21,7 +27,6 @@ class FakeTraffic : TileService() {
             MaliciousDomainClassifier.Result.BENIGN
         )
 
-        Log.i(TAG, "End fake notification")
         super.onClick()
     }
 }

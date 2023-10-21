@@ -35,27 +35,35 @@ class MaliciousDomainClassifier(val context: Context) {
 
     fun predict(domain: String, response: DnsPacket, whois: String?): Result {
         val input = encode(domain, response, whois)
-        Log.d(TAG, "$domain: [${input.joinToString(", ") { it.toString() }}]")
 
         val result = synchronized(lock) {
             buffer!!.loadArray(input)
             model!!.process(buffer!!)
                 .outputFeature0AsTensorBuffer
                 .floatArray
-                .first()
+        }
+        val argmax = result.withIndex()
+            .maxByOrNull { it.value }
+            ?.index
+
+        val type = when (argmax) {
+            0 -> Result.BENIGN
+            1 -> Result.MALWARE
+            2 -> Result.PHISHING
+            3 -> Result.RANSOMWARE
+            else -> null
         }
 
-        return when (result) {
-            0f -> Result.BENIGN
-            1f -> Result.MALWARE
-            2f -> Result.PHISHING
-            3f -> Result.RANSOMWARE
-            4f -> Result.RANSOMWARE
-            else -> {
-                Log.e(TAG, "Unknown model result type $result. Defaulting to benign.")
-                Result.BENIGN
-            }
+        Log.d(
+            TAG,
+            "$domain (${type ?: "???"}): [${input.joinToString(", ") { it.toString() }}] -> [${result.joinToString(", ") { it.toString() }}]"
+        )
+
+        if (type == null) {
+            Log.e(TAG, "unknown link type for domain $domain, defaulting to BENIGN")
         }
+
+        return type ?: Result.BENIGN
     }
 
 

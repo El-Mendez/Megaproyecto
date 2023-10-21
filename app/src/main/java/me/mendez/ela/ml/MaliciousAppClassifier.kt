@@ -37,7 +37,7 @@ class MaliciousAppClassifier(val context: Context) {
         val array = FloatArray(permissionsMap!!.size)
 
         if (array.isEmpty() || permissions.isEmpty()) {
-            Log.e(TAG, "returning early!")
+            Log.d(TAG, "no permissions encode!")
             return array
         }
 

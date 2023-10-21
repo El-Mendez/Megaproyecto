@@ -13,6 +13,7 @@ import me.mendez.ela.chat.ChatApi
 import java.util.*
 import javax.inject.Inject
 
+private const val TAG = "ELA_BUBBLE"
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -31,6 +32,7 @@ class ChatViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
+            Log.i(TAG, "sending message $content")
             calculatingResponse.value = true
             try {
                 val res = chatApi.answer(messages)
@@ -46,6 +48,5 @@ class ChatViewModel @Inject constructor(
             }
             calculatingResponse.value = false
         }
-        Log.d("ChatScreen", "sending message :$content")
     }
 }

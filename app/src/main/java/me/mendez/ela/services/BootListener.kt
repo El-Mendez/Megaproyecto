@@ -14,26 +14,26 @@ private const val TAG = "ELA_BOOT"
 class BootListener : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null || context == null) {
-            Log.e(TAG, "something was null. abort booting")
+            Log.e(TAG, "Intent or Context must not be null")
             return
         }
 
         if (Intent.ACTION_BOOT_COMPLETED != intent.action) {
-            Log.d(TAG, "not a boot. Ignoring intent.")
+            Log.i(TAG, "Not a boot. Ignoring intent.")
             return
         }
 
         val dataStore = ElaSettingsModule.provideElaSettingsStore(context)
 
-        Log.d(TAG, "boot event received")
+        Log.i(TAG, "Boot event received")
         runBlocking {
             val state = dataStore.data.first()
 
             if (state.startOnBoot) {
-                Log.i(TAG, "starting vpn")
+                Log.d(TAG, "Start VPN because of settings")
                 ElaVpnService.sendStart(context)
             } else if (state.vpnRunning || !state.ready) {
-                Log.d(TAG, "resetting running state to false")
+                Log.d(TAG, "reset old state")
                 ElaVpnService.showRunning(dataStore, running = false, ready = true)
             }
         }

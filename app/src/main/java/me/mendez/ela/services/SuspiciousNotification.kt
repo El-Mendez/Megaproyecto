@@ -51,7 +51,7 @@ class SuspiciousNotification : BroadcastReceiver() {
 
         val domain = intent.getStringExtra("domain") ?: return
         val actionString = intent.getStringExtra("action") ?: return
-        Log.i(TAG, "new action: $actionString")
+        Log.d(TAG, "new action: $actionString")
 
         if (actionString == "CREATE_CHAT") {
             initializeChat(domain, context, intent)
@@ -93,6 +93,7 @@ class SuspiciousNotification : BroadcastReceiver() {
         val inputtedText = SuspiciousTrafficChannel.recoverSubmittedText(intent) ?: return
         val question = Message(inputtedText, true)
 
+        Log.i(TAG, "got chat ($domain) response: ($question)")
         SuspiciousTrafficChannel
             .addMessageToChat(
                 context,
@@ -119,6 +120,7 @@ class SuspiciousNotification : BroadcastReceiver() {
                 Message("parece que no tienes internet", false)
             }
 
+            Log.d(TAG, "Updating notification for chat $domain")
             SuspiciousTrafficChannel
                 .addMessageToChat(
                     context,
@@ -130,6 +132,7 @@ class SuspiciousNotification : BroadcastReceiver() {
     }
 
     private fun addToWhitelist(domain: String, context: Context) {
+        Log.i(TAG, "Trying to add $domain to whitelist")
         SuspiciousTrafficChannel.removeNotification(
             context,
             domain.hashCode()
@@ -145,6 +148,7 @@ class SuspiciousNotification : BroadcastReceiver() {
     }
 
     private fun dismissNotification(domain: String, context: Context) {
+        Log.d(TAG, "dismiss chat ($domain)")
         SuspiciousTrafficChannel.removeNotification(
             context,
             domain.hashCode()

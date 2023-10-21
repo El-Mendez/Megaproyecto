@@ -27,7 +27,7 @@ class QuickSetting : TileService() {
         CoroutineScope(Dispatchers.IO + supervisor).launch {
             dataStore.data
                 .onEach {
-                    Log.i(TAG, "updated status ${it.vpnRunning}")
+                    Log.d(TAG, "updated Tile status ${it.vpnRunning}")
                     state = it
                     qsTile?.state = if (it.vpnRunning)
                         Tile.STATE_ACTIVE
@@ -49,7 +49,7 @@ class QuickSetting : TileService() {
         }
 
         if (!ElaVpnService.haveAllPermissions(this)) {
-            Log.i(TAG, "not enough permissions to start vpn")
+            Log.w(TAG, "not enough permissions to start vpn")
             return
         }
 

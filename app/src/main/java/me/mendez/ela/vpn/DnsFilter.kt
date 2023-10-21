@@ -3,6 +3,7 @@ package me.mendez.ela.vpn
 import android.util.Log
 import kotlinx.coroutines.runBlocking
 import me.mendez.ela.ml.MaliciousDomainClassifier
+import me.mendez.ela.ml.isBenign
 import me.mendez.ela.persistence.database.blocks.Block
 import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.persistence.settings.ElaSettings
@@ -24,12 +25,6 @@ private sealed interface FilterStatus {
     data class NotAllowed(val date: Long) : FilterStatus
 }
 
-private sealed interface ForwardAction {
-    data object FORWARD : ForwardAction
-    data object DENY : ForwardAction
-    class DenyWithNotification(val reason: MaliciousDomainClassifier.Result) : ForwardAction
-}
-
 class DnsFilter(
     private val service: ElaVpnService,
     private var elaSettings: ElaSettings,
@@ -45,88 +40,102 @@ class DnsFilter(
 
     fun filter(request: ByteBuffer, output: FileOutputStream) {
         val (ipPacket, udpPacket, dnsPacket) = parseRawIpPacket(request) ?: return
+        val domain = dnsPacket.header.questions.first().qName.name
 
-        when (val reason = shouldForward(dnsPacket)) {
-            ForwardAction.FORWARD -> {
-                Log.i(TAG, "allow ${dnsPacket.header.questions.joinToString(", ") { it.qName.name }}")
+        if (dnsPacket.header.isResponse) return
 
+        val cachedPermissionToGo = checkCache(dnsPacket)
+
+        // if cached
+        when (checkCache(dnsPacket)) {
+            true -> {
+                Log.i(TAG, "allow $domain (cache)")
                 val response = ByteBufferPool.poll()
                 forwardAndWaitResponse(dnsPacket.rawData, response.array())
-
                 writeBack(ipPacket, udpPacket, response.array(), output)
                 ByteBufferPool.put(response)
+                return
             }
 
-            ForwardAction.DENY -> {
-                val domain = dnsPacket.header.questions.first().qName.name
-                Log.i(TAG, "block $domain")
-                val response = fakeNoAnswer(dnsPacket)
-                writeBack(ipPacket, udpPacket, response, output)
-
+            false -> {
+                Log.i(TAG, "block $domain (cache)")
+                writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
                 runBlocking {
                     blockDao.insert(Block(domain, Date()))
                 }
+                return
             }
 
-            is ForwardAction.DenyWithNotification -> {
-                val domain = dnsPacket.header.questions.first().qName.name
-                Log.i(TAG, "block and notify $domain")
+            null -> {}
+        }
 
-                val response = fakeNoAnswer(dnsPacket)
-                writeBack(ipPacket, udpPacket, response, output)
-                runBlocking {
-                    blockDao.insert(Block(domain, Date()))
-                }
-                SuspiciousNotification.createChat(service, domain, reason.reason)
+        // not cached, manually check the packet
+        val rawResponse = ByteBufferPool.poll()
+        forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
+        val response = DnsPacket.newPacket(rawResponse.array(), 0, rawResponse.array().size)
+
+        val linkType = domainClassifier.predict(domain, response)
+        if (linkType.isBenign()) {
+            putInCache(domain, true)
+            writeBack(ipPacket, udpPacket, rawResponse.array(), output)
+        } else {
+            putInCache(domain, false)
+            writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
+            SuspiciousNotification.createChat(service, domain, linkType)
+            runBlocking {
+                blockDao.insert(Block(domain, Date()))
             }
+        }
+
+        ByteBufferPool.put(rawResponse)
+    }
+
+    private fun putInCache(domain: String, allowed: Boolean) {
+        cache[domain] = if (allowed) {
+            FilterStatus.Allowed(Date().time)
+        } else {
+            FilterStatus.NotAllowed(Date().time)
         }
     }
 
-    private fun shouldForward(dnsPacket: DnsPacket): ForwardAction {
+    private fun checkCache(dnsPacket: DnsPacket): Boolean? {
         val header: DnsPacket.DnsHeader = dnsPacket.header!!
-
-        // why forward a response?
-        if (header.isResponse) return ForwardAction.DENY
 
         // for now, let's assume only single question per packet
         val question = header.questions.first().qName.name
 
-        if (inWhitelist(question)) return ForwardAction.FORWARD
 
-        // read the cached values
-        when (val cached = cache[question]) {
+        // lets ignore all in-addr.arpa domains
+        if (question.endsWith(".arpa") || question.endsWith(".arpa.")) return true
+
+        if (inWhitelist(question)) return true
+
+        // check caches
+        val cached = cache[question] ?: return null
+        when (cached) {
             is FilterStatus.Allowed -> {
                 if (cached.date + MAX_ALLOWED_CACHE_TIME >= Date().time) {
                     Log.d(TAG, "allowed cache hit for $question")
-                    return ForwardAction.FORWARD
+                    return true
                 }
             }
 
             is FilterStatus.NotAllowed -> {
                 if (cached.date + MAX_FORBIDDEN_CACHE_TIME >= Date().time) {
                     Log.d(TAG, "forbidden cache hit for $question")
-                    return ForwardAction.DENY
+                    return false
                 }
             }
-
-            null -> {}
         }
 
-        val reason = domainClassifier.predict(question)
-        if (reason == MaliciousDomainClassifier.Result.BENIGN) {
-            cache[question] = FilterStatus.Allowed(Date().time)
-            return ForwardAction.FORWARD
-        }
-
-        cache[question] = FilterStatus.NotAllowed(Date().time)
-        return ForwardAction.DenyWithNotification(reason)
+        return null
     }
 
     private fun inWhitelist(target: String): Boolean {
         return elaSettings.whitelist.contains(target)
     }
 
-    private fun fakeNoAnswer(dnsPacket: DnsPacket): ByteArray {
+    private fun notFoundAnswer(dnsPacket: DnsPacket): ByteArray {
         val dnsRequest = Message(dnsPacket.rawData)
         val name = Name("ela.ela.ela.")
         val fakeAuthority = SOARecord(name, DClass.IN, 5, name, name, 0, 0, 0, 0, 5)

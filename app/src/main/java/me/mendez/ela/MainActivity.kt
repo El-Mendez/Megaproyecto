@@ -48,7 +48,15 @@ class MainActivity : ComponentActivity() {
             ElaTheme {
                 val navController = rememberNavController()
                 val chatViewModel = viewModel<ChatViewModel>()
-                val elaSettings = elaSettingsStore.data.collectAsState(initial = ElaSettings.default()).value
+                val elaSettings =
+                    elaSettingsStore.data.collectAsState(
+                        initial = ElaSettings(
+                            vpnRunning = true,
+                            startOnBoot = false,
+                            blockDefault = true,
+                            emptyList()
+                        )
+                    ).value
                 val suspiciousApps = suspiciousApps.getAll().collectAsState(initial = emptyList())
 
                 val blockCount = blocks.amount().collectAsState(0)

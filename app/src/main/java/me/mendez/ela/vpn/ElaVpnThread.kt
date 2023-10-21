@@ -28,7 +28,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
     private var runningContext: RunningContext? = null
     private val lock = Any()
 
-    private fun startNoLock(builder: Builder, settings: ElaSettings) {
+    fun start(builder: VpnService.Builder, settings: ElaSettings) = synchronized(lock) {
         if (runningContext != null) {
             Log.w(TAG, "could not restart execution because it was already running.")
             return
@@ -45,16 +45,11 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         runningContext = RunningContext(vpnInterface, producer, consumers, filteringService)
     }
 
-    fun start(builder: VpnService.Builder, settings: ElaSettings) = synchronized(lock) {
-        startNoLock(builder, settings)
-    }
-
     fun restart(builder: Builder, settings: ElaSettings) = synchronized(lock) {
         running.set(false)
 
         if (runningContext == null) {
-            Log.w(TAG, "trying to restart when the service was off. Defaulting to start")
-            startNoLock(builder, settings) // No lock just to avoid a deadlock
+            Log.w(TAG, "trying to restart when the service was off. Do nothing")
             return
         }
 

@@ -14,6 +14,7 @@ import kotlin.math.ln
 private const val TAG = "ELA_DOMAIN_CLASSIFIER"
 
 class MaliciousDomainClassifier(val context: Context) {
+    private var model: DomainClassification? = null
     private var buffer: TensorBuffer? = null
     private val lock = Any()
 
@@ -22,13 +23,14 @@ class MaliciousDomainClassifier(val context: Context) {
     }
 
     fun load() {
-        if (buffer == null) {
+        if (model == null) {
             buffer = TensorBuffer.createFixedSize(intArrayOf(1, 11), DataType.FLOAT32)
+            model = DomainClassification.newInstance(context)
         }
     }
 
     fun destroy() {
-
+        model?.close()
     }
 
     fun predict(domain: String, response: DnsPacket, whois: String?): Result {
@@ -37,15 +39,18 @@ class MaliciousDomainClassifier(val context: Context) {
 
         val result = synchronized(lock) {
             buffer!!.loadArray(input)
-            0
+            model!!.process(buffer!!)
+                .outputFeature0AsTensorBuffer
+                .floatArray
+                .first()
         }
 
         return when (result) {
-            0 -> Result.BENIGN
-            1 -> Result.MALWARE
-            2 -> Result.PHISHING
-            3 -> Result.RANSOMWARE
-            4 -> Result.RANSOMWARE
+            0f -> Result.BENIGN
+            1f -> Result.MALWARE
+            2f -> Result.PHISHING
+            3f -> Result.RANSOMWARE
+            4f -> Result.RANSOMWARE
             else -> {
                 Log.e(TAG, "Unknown model result type $result. Defaulting to benign.")
                 Result.BENIGN

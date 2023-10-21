@@ -35,11 +35,21 @@ class MaliciousDomainClassifier(val context: Context) {
         val input = encode(domain, response, whois)
         Log.d(TAG, "$domain: [${input.joinToString(", ") { it.toString() }}]")
 
-        return Result.BENIGN
-
-        return synchronized(lock) {
+        val result = synchronized(lock) {
             buffer!!.loadArray(input)
-            Result.BENIGN
+            0
+        }
+
+        return when (result) {
+            0 -> Result.BENIGN
+            1 -> Result.MALWARE
+            2 -> Result.PHISHING
+            3 -> Result.RANSOMWARE
+            4 -> Result.RANSOMWARE
+            else -> {
+                Log.e(TAG, "Unknown model result type $result. Defaulting to benign.")
+                Result.BENIGN
+            }
         }
     }
 
@@ -190,16 +200,12 @@ fun MaliciousDomainClassifier.Result.isBenign(): Boolean {
 }
 
 fun MaliciousDomainClassifier.Result.prompt(): String {
-    return when (this) {
-        MaliciousDomainClassifier.Result.BENIGN -> "dame un dato interesante de ciberseguridad"
-        else -> {
-            val type = when (this) {
-                MaliciousDomainClassifier.Result.MALWARE -> "malware"
-                MaliciousDomainClassifier.Result.PHISHING -> "phishing"
-                MaliciousDomainClassifier.Result.RANSOMWARE -> "ransomware"
-                MaliciousDomainClassifier.Result.BENIGN -> TODO()
-            }
-            "Qué es $type y cómo puedo protegerme ante posibles ataques?"
-        }
+    val type = when (this) {
+        MaliciousDomainClassifier.Result.BENIGN -> return "dame un dato interesante de ciberseguridad"
+        MaliciousDomainClassifier.Result.MALWARE -> "malware"
+        MaliciousDomainClassifier.Result.PHISHING -> "phishing"
+        MaliciousDomainClassifier.Result.RANSOMWARE -> "ransomware"
     }
+
+    return "Qué es $type y cómo puedo protegerme ante posibles ataques?"
 }

@@ -44,22 +44,22 @@ class SettingsViewModel @Inject constructor(
 
             when (dataStore.nextAction(updater)) {
                 ActionNeeded.START -> {
-                    Log.i(TAG, "attempting to start vpn")
+                    Log.i(TAG, "sending start vpn request")
                     tryActivateVpn(context, askPermissionContract, startActivityForResultContract)
                 }
 
                 ActionNeeded.STOP -> {
-                    Log.i(TAG, "stopping vpn")
+                    Log.i(TAG, "sending stop vpn request")
                     ElaVpnService.sendStop(context)
                 }
 
                 ActionNeeded.RESTART -> {
-                    Log.i(TAG, "changes were made when it was on. Trying to restart service.")
+                    Log.i(TAG, "changes were made when it was on. Send restart vpn request")
                     ElaVpnService.sendRestart(context)
                 }
 
                 ActionNeeded.NONE -> {
-                    Log.i(TAG, "changes were made but it was off. Nothing to do.")
+                    Log.d(TAG, "Changes were made but it was off. Nothing to do.")
                 }
             }
         }

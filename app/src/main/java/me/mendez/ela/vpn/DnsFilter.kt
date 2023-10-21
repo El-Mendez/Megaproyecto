@@ -49,7 +49,10 @@ class DnsFilter(
 
         if (!elaSettings.blockDefault) {
             rawResponse = ByteBufferPool.poll()
-            forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
+            if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
+                ByteBufferPool.put(rawResponse)
+                return
+            }
         }
 
         // if cached
@@ -58,7 +61,10 @@ class DnsFilter(
                 Log.i(TAG, "allow $domain (cache)")
                 if (rawResponse == null) {
                     rawResponse = ByteBufferPool.poll()
-                    forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
+                    if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
+                        ByteBufferPool.put(rawResponse)
+                        return
+                    }
                 }
 
                 writeBack(ipPacket, udpPacket, rawResponse.array(), output)
@@ -87,7 +93,10 @@ class DnsFilter(
         // not cached, manually check the packet
         if (rawResponse == null) {
             rawResponse = ByteBufferPool.poll()
-            forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())
+            if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
+                ByteBufferPool.put(rawResponse)
+                return
+            }
         }
 
         val response = DnsPacket.newPacket(rawResponse.array(), 0, rawResponse.array().size)
@@ -170,14 +179,34 @@ class DnsFilter(
         return dnsRequest.toWire()
     }
 
-    private fun forwardAndWaitResponse(rawRequest: ByteArray, rawResponse: ByteArray) {
-        val socket = DatagramSocket()
-        service.protect(socket)
+    private fun forwardAndWaitResponse(rawRequest: ByteArray, rawResponse: ByteArray): Boolean {
+        val socket = try {
+            val socket = DatagramSocket()
+            service.protect(socket)
+            socket
+        } catch (_: Exception) {
+            return false
+        }
 
-        socket.send(DatagramPacket(rawRequest, 0, rawRequest.size, upstreamDnsServer, 53))
+        val sent = try {
+            Log.v(TAG, "sending udp packet")
+            socket.send(DatagramPacket(rawRequest, 0, rawRequest.size, upstreamDnsServer, 53))
+            Log.v(TAG, "waiting for udp response")
+            socket.receive(DatagramPacket(rawResponse, rawResponse.size))
+            true
+        } catch (_: Exception) {
+            Log.w(TAG, "could not send or receive udp packet")
+            socket.receive(DatagramPacket(rawResponse, rawResponse.size))
+            false
+        }
 
-        socket.receive(DatagramPacket(rawResponse, rawResponse.size))
-        socket.close()
+        return try {
+            socket.close()
+            sent
+        } catch (e: Exception) {
+            Log.w(TAG, "could not cleanup socket")
+            sent
+        }
     }
 
     private fun writeBack(
@@ -289,15 +318,16 @@ class DnsFilter(
             }
 
             return try {
-                Log.d(TAG, "starting whois request for $domain ($topDomain)")
+                Log.v(TAG, "starting whois request for $domain ($topDomain)")
                 val whois = WhoisClient()
                 whois.connect(WhoisClient.DEFAULT_HOST)
                 val result = whois.query(topDomain).toString()
                 whois.disconnect()
-                Log.d(TAG, "finish whois request for $domain")
+                Log.v(TAG, "finish whois request for $domain")
 
                 result
             } catch (e: Exception) {
+                Log.e(TAG, "whois request for $domain failed $e")
                 null
             }
         }

@@ -56,7 +56,7 @@ class MaliciousDomainClassifier(val context: Context) {
 
         Log.d(
             TAG,
-            "$domain (${type ?: "???"}): [${input.joinToString(", ") { it.toString() }}] -> [${result.joinToString(", ") { it.toString() }}]"
+            "$domain (${type ?: "???"}): \n[${input.joinToString(", ") { it.toString() }}] -> [${result.joinToString(", ") { it.toString() }}]"
         )
 
         if (type == null) {

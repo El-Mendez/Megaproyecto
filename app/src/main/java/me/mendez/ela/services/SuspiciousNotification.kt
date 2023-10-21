@@ -73,7 +73,7 @@ class SuspiciousNotification : BroadcastReceiver() {
 
         val text = runBlocking {
             val response = chatApi.answer(
-                listOf(Message(reason.prompt(domain), true, Date()))
+                listOf(Message(reason.prompt(), true, Date()))
             ).firstOrNull() ?: Message(
                 "Vaya, parece que no tienes internet. No puedo darte tips de ciberseguridad hasta que vuelvas a conectarte",
                 false,

@@ -4,16 +4,27 @@ import android.content.Context
 import io.mailguru.whois.model.WhoisResult
 import io.mailguru.whois.service.WhoisService
 import org.pcap4j.packet.DnsPacket
+import org.tensorflow.lite.DataType
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import kotlin.math.ln
 
 class MaliciousDomainClassifier(val context: Context) {
+    private var buffer: TensorBuffer? = null
+    private val lock = Any()
+
     enum class Result {
-        BENIGN
+        BENIGN, MALWARE, PHISHING, RANSOMWARE,
     }
 
-    fun load() {}
+    fun load() {
+        if (buffer == null) {
+            buffer = TensorBuffer.createFixedSize(intArrayOf(1, 11), DataType.FLOAT32)
+        }
+    }
 
-    fun destroy() {}
+    fun destroy() {
+
+    }
 
     fun predict(domain: String, response: DnsPacket): Result {
         val segments = domain.split(".")
@@ -31,8 +42,13 @@ class MaliciousDomainClassifier(val context: Context) {
 
         val result = WhoisService.lookup(topDomain)
         val input = encode(domain, response, result)
-        return Result.BENIGN
+
+        return synchronized(lock) {
+            buffer!!.loadArray(input)
+            Result.BENIGN
+        }
     }
+
 
     private fun encode(domain: String, response: DnsPacket, whois: WhoisResult?): FloatArray {
         return listOf(
@@ -57,11 +73,21 @@ class MaliciousDomainClassifier(val context: Context) {
         }
 
         private fun lifetime(whois: WhoisResult?): Float {
-            TODO()
+            return if (whois == null) {
+                // expiración - creación (años)
+                0f
+            } else {
+                TODO()
+            }
         }
 
         private fun activeLifetime(whois: WhoisResult?): Float {
-            TODO()
+            // actualización - creación (días)
+            return if (whois == null) {
+                -1f
+            } else {
+                TODO()
+            }
         }
 
         private fun entropy(domain: String): Float {
@@ -117,8 +143,17 @@ fun MaliciousDomainClassifier.Result.isBenign(): Boolean {
     return this == MaliciousDomainClassifier.Result.BENIGN
 }
 
-fun MaliciousDomainClassifier.Result.prompt(domain: String): String {
+fun MaliciousDomainClassifier.Result.prompt(): String {
     return when (this) {
         MaliciousDomainClassifier.Result.BENIGN -> "dame un dato interesante de ciberseguridad"
+        else -> {
+            val type = when (this) {
+                MaliciousDomainClassifier.Result.MALWARE -> "malware"
+                MaliciousDomainClassifier.Result.PHISHING -> "phishing"
+                MaliciousDomainClassifier.Result.RANSOMWARE -> "ransomware"
+                MaliciousDomainClassifier.Result.BENIGN -> TODO()
+            }
+            "Qué es $type y cómo puedo protegerme ante posibles ataques?"
+        }
     }
 }

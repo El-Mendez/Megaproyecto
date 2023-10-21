@@ -34,8 +34,10 @@ class ElaVpnService : VpnService() {
 
     companion object {
         @JvmStatic
-        suspend fun showRunning(running: Boolean, store: DataStore<ElaSettings>) {
-            store.updateData { it.copy(vpnRunning = running) }
+        suspend fun showRunning(store: DataStore<ElaSettings>, running: Boolean? = null, ready: Boolean? = null) {
+            if (running == null && ready == null) return
+
+            store.updateData { it.copy(vpnRunning = running ?: it.vpnRunning, ready = ready ?: it.ready) }
         }
 
         @JvmStatic

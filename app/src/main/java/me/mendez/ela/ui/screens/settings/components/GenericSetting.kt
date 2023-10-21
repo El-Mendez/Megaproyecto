@@ -3,7 +3,6 @@ package me.mendez.ela.ui.screens.settings.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,7 +27,7 @@ fun GenericSetting(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
         modifier = modifier
-            .clickable { onClick() }
+            .clickable { if (isEnabled) onClick() }
             .padding(20.dp)
             .fillMaxWidth()
     ) {

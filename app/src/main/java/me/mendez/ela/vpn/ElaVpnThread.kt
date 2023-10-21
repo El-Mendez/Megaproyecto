@@ -56,9 +56,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         // stop old jobs
         endConsumers(runningContext!!.consumers)
         endProducer(runningContext!!.producer)
-        Thread.sleep(2000)
         closeVpnInterface(runningContext!!.vpnInterface)
-
 
         // start new jobs
         running.set(true)
@@ -75,13 +73,14 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
     }
 
     fun stop() = synchronized(lock) {
+        running.set(false)
+
         if (runningContext == null) {
             Log.w(TAG, "vpn was already stopped")
             return
         }
 
         Log.d(TAG, "Stopping thread")
-        running.set(false)
 
         endProducer(runningContext!!.producer)
         endConsumers(runningContext!!.consumers)
@@ -104,7 +103,9 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
                     Log.i(TAG, "got empty packet!")
 
                 consumers.submit {
-                    filter.filter(buffer, output)
+                    if (running.get()) {
+                        filter.filter(buffer, output)
+                    }
                     ByteBufferPool.put(buffer)
                 }
             }
@@ -135,7 +136,7 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
         thread.interrupt()
 
         try {
-            thread.join(2000)
+            thread.join(5000)
             Log.d(TAG, "joined old vpn thread")
         } catch (e: Exception) {
             Log.e(TAG, "could not join thread $e")
@@ -166,9 +167,8 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
 
     private fun endConsumers(consumers: ExecutorService) {
         consumers.shutdown()
-        val finished = consumers.awaitTermination(2000, TimeUnit.MILLISECONDS)
+        val finished = consumers.awaitTermination(5000, TimeUnit.MILLISECONDS)
         if (!finished)
             consumers.shutdownNow()
-        Thread.sleep(2000)
     }
 }

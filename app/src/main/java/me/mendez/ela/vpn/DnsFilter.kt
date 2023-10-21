@@ -231,7 +231,7 @@ class DnsFilter(
 
     fun recycle(elaSettings: ElaSettings) {
         this.elaSettings = elaSettings.copy()
-        cache.clear()
+        // TODO maybe clear cache from old domains?
     }
 
     fun destroy() {

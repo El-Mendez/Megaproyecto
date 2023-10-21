@@ -78,8 +78,10 @@ fun AddDomainsScreen(
             DomainsList(
                 modifier = Modifier.padding(it),
                 domains = currentDomains,
-                showSave = changed,
+                showSave = changed && settings.ready,
                 onSave = {
+                    if (!settings.ready) return@DomainsList
+
                     if (changed) {
                         update { old ->
                             old.withWhitelist(currentDomains)

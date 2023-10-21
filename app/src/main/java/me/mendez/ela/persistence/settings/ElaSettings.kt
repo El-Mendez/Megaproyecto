@@ -24,6 +24,7 @@ data class ElaSettings(
     val vpnRunning: Boolean,
     val startOnBoot: Boolean,
     val blockDefault: Boolean,
+    val ready: Boolean,
     val whitelist: List<String>,
 ) {
     fun withAddedInWhitelist(newDomain: String): ElaSettings {
@@ -65,6 +66,7 @@ data class ElaSettings(
                 vpnRunning = false,
                 blockDefault = true,
                 startOnBoot = false,
+                ready = true,
                 whitelist = emptyList(),
             )
         }

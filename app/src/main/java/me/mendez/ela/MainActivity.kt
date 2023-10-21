@@ -54,7 +54,8 @@ class MainActivity : ComponentActivity() {
                             vpnRunning = true,
                             startOnBoot = false,
                             blockDefault = true,
-                            emptyList()
+                            ready = true,
+                            emptyList(),
                         )
                     ).value
                 val suspiciousApps = suspiciousApps.getAll().collectAsState(initial = emptyList())

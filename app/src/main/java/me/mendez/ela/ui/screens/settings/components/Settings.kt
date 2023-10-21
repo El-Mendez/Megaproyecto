@@ -12,7 +12,6 @@ fun Settings(
     update: ((ElaSettings) -> ElaSettings) -> Unit,
     onAddDomains: () -> Unit,
 ) {
-
     Column(modifier) {
         SettingItem(
             title = "Activar Protección",
@@ -23,13 +22,13 @@ fun Settings(
                     old.copy(vpnRunning = it)
                 }
             },
-            isEnabled = true,
+            isEnabled = settings.ready,
         )
         SettingItem(
             title = "Bloquear conexiones",
             text = "Automáticamente bloquear el tráfico tráfico sospechoso.",
             isOn = settings.blockDefault,
-            isEnabled = true,
+            isEnabled = settings.ready,
             onToggle = {
                 update { old ->
                     old.copy(blockDefault = it)
@@ -44,7 +43,7 @@ fun Settings(
                 "Páginas que nunca darán advertencia"
             },
             onClick = onAddDomains,
-            isEnabled = true,
+            isEnabled = settings.ready,
         )
     }
 }

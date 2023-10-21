@@ -8,7 +8,6 @@ import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
 import io.ktor.client.call.*
 import io.ktor.client.engine.android.Android
-import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
@@ -31,7 +30,7 @@ class ChatApi(
         return try {
             Log.i(TAG, "trying to send message")
             getNewChatMessage(chat)
-        } catch (e: ClientRequestException) {
+        } catch (e: Exception) {
             Log.e(TAG, "could not send message $e")
             emptyList()
         }

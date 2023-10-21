@@ -39,8 +39,7 @@ class SuspiciousNotification : BroadcastReceiver() {
     @Inject
     lateinit var elaSettingsStore: DataStore<ElaSettings>
 
-    @Inject
-    lateinit var chatApi: ChatApi
+    var chatApi: ChatApi? = null
 
     @Inject
     lateinit var messageDao: MessageDao
@@ -48,6 +47,8 @@ class SuspiciousNotification : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) return
+        if (chatApi == null) chatApi = ChatApi.create()
+
         val domain = intent.getStringExtra("domain") ?: return
         val actionString = intent.getStringExtra("action") ?: return
         Log.i(TAG, "new action: $actionString")
@@ -72,8 +73,8 @@ class SuspiciousNotification : BroadcastReceiver() {
         val reasonString = intent.getStringExtra("reason") ?: return
         val reason = MaliciousDomainClassifier.Result.valueOf(reasonString)
 
-        val text = runBlocking {
-            val response = chatApi.answer(
+        CoroutineScope(Dispatchers.IO + supervisor).launch {
+            val response = chatApi!!.answer(
                 listOf(Message(reason.prompt(), true, Date()))
             ).firstOrNull() ?: Message(
                 "Vaya, parece que no tienes internet. No puedo darte tips de ciberseguridad hasta que vuelvas a conectarte",
@@ -82,11 +83,9 @@ class SuspiciousNotification : BroadcastReceiver() {
             )
             messageDao.addMessage(domain, response)
 
-            response.content
-        }
-
-        SuspiciousTrafficChannel.notify(context, domain.hashCode()) {
-            newSuspiciousTraffic(domain, text)
+            SuspiciousTrafficChannel.notify(context, domain.hashCode()) {
+                newSuspiciousTraffic(domain, response.content)
+            }
         }
     }
 
@@ -113,7 +112,7 @@ class SuspiciousNotification : BroadcastReceiver() {
                 val conversation = messages
                     .toMutableList()
                     .apply { add(question) }
-                val response = chatApi.answer(conversation)
+                val response = chatApi!!.answer(conversation)
                 messageDao.addMessage(domain, response.last())
                 response.last()
             } catch (e: Exception) {

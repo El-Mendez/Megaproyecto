@@ -19,9 +19,13 @@ class DailyTip : BroadcastReceiver() {
         if (context == null) return
 
         val response = runBlocking {
-            chatApi.answer(
-                listOf(Message("dame un dato interesante de ciberseguridad", true, Date()))
-            )
+            try {
+                chatApi.answer(
+                    listOf(Message("dame un dato interesante de ciberseguridad", true, Date()))
+                )
+            } catch (e: Exception) {
+                return@runBlocking emptyList()
+            }
         }
 
         if (response.isEmpty()) return

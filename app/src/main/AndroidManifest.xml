@@ -21,6 +21,7 @@
         <activity
             android:name="me.mendez.ela.MainActivity"
             android:exported="true"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.Ela">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -47,6 +48,7 @@
             android:allowEmbedded="true"
             android:resizeableActivity="true"
             android:documentLaunchMode="always"
+            android:windowSoftInputMode="adjustResize"
         />
 
         <receiver android:name=".services.BootListener" android:exported="true" android:process=":boot">
@@ -85,28 +87,6 @@
 
             <meta-data android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                        android:value="true"/>
-
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE"/>
-            </intent-filter>
-        </service>
-
-        <service android:name=".services.fake.FakeTraffic"
-                 android:label="FAKE TRAFFIC"
-                 android:icon="@drawable/logo_24"
-                 android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-                 android:exported="true">
-
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE"/>
-            </intent-filter>
-        </service>
-
-        <service android:name=".services.fake.FakeAppInstall"
-                 android:label="FAKE APP INSTALL"
-                 android:icon="@drawable/logo_24"
-                 android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-                 android:exported="true">
 
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>

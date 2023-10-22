@@ -4,10 +4,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -15,6 +13,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,35 +58,47 @@ fun WritingBubble() {
             )
         )
     }
-
-    Surface(
-        color = MaterialTheme.colors.primary,
-        shape = RoundedCornerShape(8.dp),
-        elevation = 5.dp,
+    Row(
+        verticalAlignment = Alignment.Bottom,
         modifier = Modifier
-            .height(40.dp)
             .padding(vertical = 5.dp, horizontal = 22.dp),
     ) {
-        Row(
+        Box(
+            modifier = Modifier.background(
+                color = MaterialTheme.colors.primary,
+                shape = TriangleEdgeShape(16, false)
+            )
+                .width(16.dp)
+                .height(16.dp)
+        )
+
+        Surface(
+            color = MaterialTheme.colors.primary,
+            shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 0.dp),
             modifier = Modifier
-                .padding(horizontal = 6.dp)
-                .offset(y = 5.dp)
+                .height(40.dp)
         ) {
-            Text(
-                text = "⬤",
-                style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
-                modifier = Modifier.offset(y = offset1.value.dp)
-            )
-            Text(
-                text = "⬤",
-                style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
-                modifier = Modifier.offset(y = offset2.value.dp)
-            )
-            Text(
-                text = "⬤",
-                style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
-                modifier = Modifier.offset(y = offset3.value.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 6.dp)
+                    .offset(y = 5.dp)
+            ) {
+                Text(
+                    text = "⬤",
+                    style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
+                    modifier = Modifier.offset(y = offset1.value.dp)
+                )
+                Text(
+                    text = "⬤",
+                    style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
+                    modifier = Modifier.offset(y = offset2.value.dp)
+                )
+                Text(
+                    text = "⬤",
+                    style = MaterialTheme.typography.body1.plus(TextStyle(color = MaterialTheme.colors.onPrimary)),
+                    modifier = Modifier.offset(y = offset3.value.dp)
+                )
+            }
         }
     }
 }

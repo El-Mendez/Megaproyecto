@@ -1,10 +1,8 @@
 package me.mendez.ela.ui.screens.chat.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -21,9 +19,11 @@ import java.text.DateFormat
 @Composable
 fun MessageBubble(content: Message) {
     var showDetails by remember { mutableStateOf(false) }
-    val alignment: Alignment
+    val arrangement: Arrangement.Horizontal
     val backgroundColor: Color
     val fontColor: Color
+    val shape: RoundedCornerShape
+    val columnAlignment: Alignment.Horizontal
 
     val date by remember {
         derivedStateOf {
@@ -33,29 +33,47 @@ fun MessageBubble(content: Message) {
     }
 
     if (content.userCreated) {
-        alignment = Alignment.CenterEnd
+        arrangement = Arrangement.End
         backgroundColor = MaterialTheme.colors.secondary
         fontColor = MaterialTheme.colors.onSecondary
+        shape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 8.dp)
+        columnAlignment = Alignment.End
     } else {
-        alignment = Alignment.CenterStart
+        arrangement = Arrangement.Start
         backgroundColor = MaterialTheme.colors.primary
         fontColor = MaterialTheme.colors.onPrimary
+        shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 0.dp)
+        columnAlignment = Alignment.Start
     }
 
-    Box(
-        contentAlignment = alignment,
+    Row(
+        horizontalArrangement = arrangement,
+        verticalAlignment = Alignment.Bottom,
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 5.dp),
     ) {
+        if (!content.userCreated) {
+            Box(
+                modifier = Modifier.background(
+                    color = backgroundColor,
+                    shape = TriangleEdgeShape(16, false)
+                )
+                    .width(16.dp)
+                    .height(16.dp)
+            )
+        }
+
         Surface(
             color = backgroundColor,
-            shape = RoundedCornerShape(8.dp),
+            shape = shape,
             elevation = 5.dp,
             modifier = Modifier
-                .padding(vertical = 5.dp, horizontal = 16.dp)
                 .clickable { showDetails = !showDetails },
         ) {
-            Column {
+            Column(
+                horizontalAlignment = columnAlignment
+            ) {
                 Text(
                     text = content.content,
                     style = MaterialTheme.typography.body1.plus(TextStyle(color = fontColor)),
@@ -64,14 +82,25 @@ fun MessageBubble(content: Message) {
                 )
 
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = showDetails
+                    visible = showDetails,
                 ) {
                     Text(
                         text = date,
                         style = MaterialTheme.typography.caption,
+                        modifier = Modifier.padding(horizontal = 5.dp)
                     )
                 }
             }
+        }
+        if (content.userCreated) {
+            Box(
+                modifier = Modifier.background(
+                    color = backgroundColor,
+                    shape = TriangleEdgeShape(16, true)
+                )
+                    .width(16.dp)
+                    .height(16.dp)
+            )
         }
     }
 }

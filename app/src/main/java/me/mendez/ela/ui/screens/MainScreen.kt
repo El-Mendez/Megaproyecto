@@ -110,7 +110,7 @@ fun Score(blocks: Int, modifier: Modifier = Modifier) {
         var animationStarted by remember { mutableStateOf(false) }
         val animatedScore by animateIntAsState(
             targetValue = if (animationStarted) blocks else 0,
-            animationSpec = tween(500), label = "score animation"
+            animationSpec = tween(500),
         )
 
         LaunchedEffect(Unit) {

@@ -34,10 +34,9 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             Log.i(TAG, "sending message $content")
             calculatingResponse.value = true
-            try {
-                val res = chatApi.answer(messages)
-                messages.addAll(res)
-            } catch (e: Exception) {
+            val res = chatApi.answer(messages)
+
+            if (res.isEmpty()) {
                 messages.add(
                     Message(
                         "Vaya, parece que no tienes conexión a internet",
@@ -45,7 +44,10 @@ class ChatViewModel @Inject constructor(
                         Date(),
                     )
                 )
+            } else {
+                messages.addAll(res)
             }
+
             calculatingResponse.value = false
         }
     }

@@ -4,7 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.VpnService
+import android.net.*
 import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -82,11 +82,16 @@ class ElaVpnService : VpnService() {
             vpnThread = ElaVpnThread(this, blockDao)
         }
 
-        when (intent?.action) {
-            Commands.START.toString() -> start()
-            Commands.RESTART.toString() -> restart()
-            Commands.STOP.toString() -> stop()
+        try {
+            when (intent?.action) {
+                Commands.START.toString() -> start()
+                Commands.RESTART.toString() -> restart()
+                Commands.STOP.toString() -> stop()
+            }
+        } catch (e: Exception) {
+            errorStop("Algo salió mal. $e")
         }
+
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -120,6 +125,9 @@ class ElaVpnService : VpnService() {
 
     private fun restart() {
         Log.i(TAG, "restarting vpn")
+        if (vpnThread == null) {
+            vpnThread = ElaVpnThread(this, blockDao)
+        }
 
         runBlocking {
             showRunning(elaSettingsStore, ready = false)
@@ -135,10 +143,17 @@ class ElaVpnService : VpnService() {
 
     private fun stop() {
         Log.i(TAG, "stopping vpn")
+        if (vpnThread == null) {
+            runBlocking {
+                showRunning(elaSettingsStore, running = false, ready = true)
+            }
+            stopSelf()
+            return
+        }
+
         runBlocking {
             showRunning(elaSettingsStore, running = false, ready = false)
             vpnThread!!.stop()
-
             showRunning(elaSettingsStore, running = false, ready = true)
         }
 
@@ -156,11 +171,15 @@ class ElaVpnService : VpnService() {
         }
 
         try {
-            vpnThread!!.stop()
+            runBlocking {
+                if (vpnThread != null)
+                    vpnThread!!.stop()
+                showRunning(elaSettingsStore, running = false, ready = true)
+            }
         } catch (e: Exception) {
             Log.e(TAG, "could not force stop vpn")
         }
 
-        stop()
+        stopSelf()
     }
 }

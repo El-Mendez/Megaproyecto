@@ -114,7 +114,7 @@ class MaliciousDomainClassifier(val context: Context) {
                 occurrences[it] = (occurrences[it] ?: 0) + 1
             }
 
-            return occurrences.values.map {
+            return -occurrences.values.map {
                 val p = it.toDouble() / domain.length.toDouble()
                 (p * ln(p) / ln(2.0))
             }.sum().toFloat()
@@ -188,14 +188,25 @@ class MaliciousDomainClassifier(val context: Context) {
 
         private fun consecutiveChars(domain: String, chars: String): Float {
             var chain = 0
+            var lastChar: Char? = null
             var longestChain = 0
 
             domain.forEach {
-                if (chars.contains(it)) {
+                // keep with the chain
+                if (lastChar == it) {
                     chain += 1
+                    return@forEach
+                }
+
+                // restart the chain
+                if (chain > longestChain)
+                    longestChain = chain
+
+                if (chars.contains(it)) {
+                    lastChar = it
+                    chain = 1
                 } else {
-                    if (chain > longestChain)
-                        longestChain = chain
+                    lastChar = null
                     chain = 0
                 }
             }

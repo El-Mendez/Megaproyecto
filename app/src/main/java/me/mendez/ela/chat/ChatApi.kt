@@ -42,7 +42,7 @@ class ChatApi(
         val request = ChatGPTRequest(
             model = MODEL,
             messages = body,
-            temperature = 0.7f,
+            temperature = TEMPERATURE,
         )
 
         val response: ChatGPTResponse = client.post {
@@ -58,7 +58,8 @@ class ChatApi(
     companion object {
         private const val BASE_URL = "https://api.openai.com/v1"
         private const val CHAT_URL = "$BASE_URL/chat/completions"
-        private const val MODEL = "ft:gpt-3.5-turbo-0613:ela:ela:8BkjWG5l"
+        private const val MODEL = "ft:gpt-3.5-turbo-0613:ela:cybersecurity-ela:8C81S6j3"
+        private const val TEMPERATURE = 0.7f
 
         fun create(): ChatApi {
             return ChatApi(

@@ -18,8 +18,16 @@ interface BlockDao {
     @Query("SELECT domain, COUNT(*) AS amount FROM block WHERE :start < date AND date < :end GROUP BY domain order by amount desc")
     fun blocksInTimeRange(start: Long, end: Long): Flow<List<DailyBlocks>>
 
+    @Query("SELECT domain, COUNT(*) AS amount FROM block WHERE :start < date AND date < :end GROUP BY domain order by amount desc limit :amount")
+    fun topBlocksInTimeRange(start: Long, end: Long, amount: Int): Flow<List<DailyBlocks>>
+
     @Query("SELECT COUNT(*) AS amount FROM block WHERE :start < date AND date < :end")
     fun blockAmountInTimeRange(start: Long, end: Long): Flow<Int>
+
+    fun topDailyBlocks(): Flow<List<DailyBlocks>> {
+        val (start, end) = today()
+        return topBlocksInTimeRange(start, end, 3)
+    }
 
     fun dailyBlocks(): Flow<List<DailyBlocks>> {
         val (start, end) = today()

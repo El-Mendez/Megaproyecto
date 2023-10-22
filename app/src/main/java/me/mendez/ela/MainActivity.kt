@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,7 +36,7 @@ class MainActivity : ComponentActivity() {
     lateinit var elaSettingsStore: DataStore<ElaSettings>
 
     @Inject
-    lateinit var suspiciousApps: SuspiciousAppDao
+    lateinit var suspiciousAppsDao: SuspiciousAppDao
 
     @Inject
     lateinit var blocks: BlockDao
@@ -48,23 +49,6 @@ class MainActivity : ComponentActivity() {
             ElaTheme {
                 val navController = rememberNavController()
                 val chatViewModel = viewModel<ChatViewModel>()
-                val elaSettings =
-                    elaSettingsStore.data.collectAsState(
-                        initial = ElaSettings(
-                            vpnRunning = true,
-                            startOnBoot = false,
-                            blockDefault = true,
-                            ready = true,
-                            emptyList(),
-                        )
-                    ).value
-                val suspiciousApps = suspiciousApps.getAll().collectAsState(initial = emptyList())
-
-                val blockCount = blocks.amount().collectAsState(0)
-                val totalDailyBlocks = blocks.dailyBlockAmount().collectAsState(0)
-                val dailyBlocks = blocks
-                    .dailyBlocks()
-                    .collectAsState(initial = emptyList())
 
                 val settingsViewModel = viewModel<SettingsViewModel>()
                 val startActivityForResultContract = rememberLauncherForActivityResult(
@@ -81,9 +65,30 @@ class MainActivity : ComponentActivity() {
                         )
                     })
 
-
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
+                        val suspiciousApps by suspiciousAppsDao.getAll()
+                            .collectAsState(emptyList())
+
+                        val totalBlocks by blocks.amount()
+                            .collectAsState(0)
+
+                        val topDailyBlocks by blocks.topDailyBlocks()
+                            .collectAsState(emptyList())
+
+                        val dailyBlockAmount by blocks.dailyBlockAmount()
+                            .collectAsState(0)
+
+                        val elaSettings by elaSettingsStore.data.collectAsState(
+                            initial = ElaSettings(
+                                vpnRunning = true,
+                                startOnBoot = false,
+                                blockDefault = true,
+                                ready = true,
+                                emptyList(),
+                            )
+                        )
+
                         MainScreen(
                             onSend = {
                                 navController.navigate("chat")
@@ -98,13 +103,13 @@ class MainActivity : ComponentActivity() {
                             enableVpn = {
                                 navController.navigate("settings")
                             },
-                            suspiciousAppsAmount = suspiciousApps.value.size,
                             onSuspiciousAppClick = {
                                 navController.navigate("app-details")
                             },
-                            totalBlocks = blockCount.value,
-                            dailyBlocks = dailyBlocks.value,
-                            totalDailyBlocks = totalDailyBlocks.value,
+                            suspiciousAppsAmount = suspiciousApps.size,
+                            totalBlocks = totalBlocks,
+                            dailyBlocks = topDailyBlocks,
+                            totalDailyBlocks = dailyBlockAmount,
                         )
                     }
 
@@ -119,9 +124,12 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("settings") {
+                        val settings by settingsViewModel.state
+                            .collectAsState(initial = ElaSettings.default())
+
                         SettingsNestedGraph(
                             onReturn = navController::popBackStack,
-                            settings = settingsViewModel.state.collectAsState(initial = ElaSettings.default()).value,
+                            settings = settings,
                             update = {
                                 settingsViewModel.updateSettings(
                                     it,
@@ -134,15 +142,21 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("details") {
+                        val dailyBlocks by blocks.dailyBlocks()
+                            .collectAsState(emptyList())
+
                         DailyBlocksScreen(
                             onReturn = navController::popBackStack,
-                            dailyBlocks = dailyBlocks.value,
+                            dailyBlocks = dailyBlocks,
                         )
                     }
 
                     composable("app-details") {
+                        val suspiciousApps by suspiciousAppsDao.getAll()
+                            .collectAsState(emptyList())
+
                         SuspiciousAppsScreen(
-                            remember { derivedStateOf { suspiciousApps.value.map { it.packageName } } }.value,
+                            remember { derivedStateOf { suspiciousApps.map { it.packageName } } }.value,
                             navController::popBackStack
                         )
                     }

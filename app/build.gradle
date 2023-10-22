@@ -111,6 +111,8 @@ dependencies {
 
     // whois
     implementation 'commons-net:commons-net:3.10.0'
+    // extract tld
+    api('com.google.guava:guava:32.1.3-android')
 
     // datetimes when running on low level apis suck
     implementation 'joda-time:joda-time:2.12.5'

@@ -1,6 +1,7 @@
 package me.mendez.ela.vpn
 
 import android.util.Log
+import com.google.common.net.InternetDomainName
 import kotlinx.coroutines.runBlocking
 import me.mendez.ela.ml.MaliciousDomainClassifier
 import me.mendez.ela.ml.isBenign
@@ -307,21 +308,15 @@ class DnsFilter(
             val segments = domain.split(".")
             if (segments.isEmpty()) return null
 
-            val topDomain = if (segments.last().isEmpty()) {
-                segments
-                    .slice(maxOf(0, segments.size - 3)..<segments.size)
-                    .joinToString(".") { it }
-            } else {
-                segments
-                    .slice(maxOf(0, segments.size - 2)..<segments.size)
-                    .joinToString(".") { it }
-            }
+            val topPrivateDomain = InternetDomainName.from(domain)
+                .topPrivateDomain()
+                .toString()
 
             return try {
-                Log.v(TAG, "starting whois request for $domain ($topDomain)")
+                Log.v(TAG, "starting whois request for $domain ($topPrivateDomain)")
                 val whois = WhoisClient()
                 whois.connect(WhoisClient.DEFAULT_HOST)
-                val result = whois.query(topDomain).toString()
+                val result = whois.query(topPrivateDomain).toString()
                 whois.disconnect()
                 Log.v(TAG, "finish whois request for $domain")
 

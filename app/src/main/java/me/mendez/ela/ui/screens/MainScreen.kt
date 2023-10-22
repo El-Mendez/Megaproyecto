@@ -23,6 +23,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import me.mendez.ela.R
 import me.mendez.ela.persistence.database.blocks.DailyBlocks
+import java.util.Calendar
+import kotlin.random.Random
+
 
 @Composable
 fun MainScreen(
@@ -39,6 +42,17 @@ fun MainScreen(
 ) {
     val image = ImageBitmap.imageResource(R.drawable.background_tile)
     val verticalScroll = rememberScrollState()
+    val tip = remember {
+        val calendar = Calendar.getInstance()
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val month = calendar.get(Calendar.MONTH)
+
+        TIPS
+            .toMutableList()
+            .shuffled(Random(month))
+            .get(day % TIPS.size)
+    }
+
     val brush = remember {
         ShaderBrush(
             ImageShader(
@@ -75,7 +89,7 @@ fun MainScreen(
             DisabledWarning(enableVpn)
         }
 
-        DailyTip("Actualiza tus contraseñas frecuentemente.", onSend)
+        DailyTip(tip, onSend)
 
 
         if (dailyBlocks.isEmpty()) {
@@ -371,3 +385,31 @@ fun SuspiciousAppsWarning(onClick: () -> Unit, amount: Int) {
         )
     }
 }
+
+val TIPS = arrayOf(
+    "Usa contraseñas fuertes",
+    "Habilita segundo factor de autenticación (2FA)",
+    "Actualiza tus dispositivos",
+    "Utiliza un antivirus",
+    "Siempre ten copias de seguridad actualizadas",
+    "¡No uses la contraseña default del Wifi!",
+    "No compartas información personal en línea",
+    "Solo descarga aplicaciones de fuentes confiables",
+    "No reutilices contraseñas",
+    "Ten cuidado al conectar USBs desconocidas",
+    "Educa a tu familia y conocidos",
+    "Usa un administrador de contraseñas",
+    "No dés información personal por teléfono",
+    "Bloquea tu computadora cada vez que te alejes de ella",
+    "No compartas contraseñas",
+    "Evita usar redes wifis públicas",
+    "Desinstala aplicaciones que ya no uses",
+    "Usa autenticación biométrica",
+    "Cubre tu cámara web mientras no la utilices",
+    "Ten un correo solo para cosas importantes",
+    "Ten cuidado al descargar archivos adjuntos en correos",
+    "Evita darle clic a anuncios publicitarios",
+    "Utiliza un bloqueador de anuncios",
+    "Desconfía de correos sospechoso",
+    "No compartas información importante por teléfono",
+)

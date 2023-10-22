@@ -137,6 +137,9 @@ class MainActivity : ComponentActivity() {
                                     askPermissionContract,
                                     startActivityForResultContract
                                 )
+                            },
+                            onExport = {
+                                settingsViewModel.shareBlockDatabase(this@MainActivity)
                             }
                         )
                     }

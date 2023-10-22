@@ -18,6 +18,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import me.mendez.ela.persistence.database.BLOCK_DATABASE_NAME
+import me.mendez.ela.persistence.database.DatabaseProvider
 import me.mendez.ela.persistence.settings.ActionNeeded
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.persistence.settings.nextAction
@@ -32,6 +34,19 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
     val state: Flow<ElaSettings>
         get() = dataStore.data
+
+    fun shareBlockDatabase(context: Context) {
+        val databaseUri = DatabaseProvider()
+            .getUri(context, BLOCK_DATABASE_NAME)
+
+        val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            setType("application/vnd.sqlite3")
+            setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(databaseUri.toList()))
+        }
+        context.startActivity(intent)
+    }
 
     fun updateSettings(
         updater: (ElaSettings) -> ElaSettings,

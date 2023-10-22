@@ -14,6 +14,7 @@ fun SettingsScreen(
     settings: ElaSettings,
     update: ((ElaSettings) -> ElaSettings) -> Unit,
     onAddDomains: () -> Unit,
+    onExport: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -25,6 +26,7 @@ fun SettingsScreen(
                 settings,
                 update,
                 onAddDomains,
+                onExport,
             )
         }
     )

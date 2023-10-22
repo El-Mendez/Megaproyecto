@@ -11,6 +11,7 @@ fun Settings(
     settings: ElaSettings,
     update: ((ElaSettings) -> ElaSettings) -> Unit,
     onAddDomains: () -> Unit,
+    onExport: () -> Unit,
 ) {
     Column(modifier) {
         SettingItem(
@@ -44,6 +45,12 @@ fun Settings(
             },
             onClick = onAddDomains,
             isEnabled = settings.ready,
+        )
+        GenericSetting(
+            title = "Exportar datos",
+            text = "Exporta únicamente información sobre qué dominios fueron bloqueados.",
+            onClick = onExport,
+            isEnabled = true,
         )
     }
 }

@@ -16,41 +16,62 @@ import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.persistence.database.chats.Message
 import me.mendez.ela.persistence.database.chats.MessageDao
 
+const val DEFAULT_DATABASE_NAME = "ela_default.sqlite"
+const val BLOCK_DATABASE_NAME = "ela_blocks.sqlite"
+
 @Database(
-    entities = [SuspiciousApp::class, Message::class, Block::class],
-    version = 3,
+    entities = [SuspiciousApp::class, Message::class],
+    version = 1,
 )
 @TypeConverters(Converters::class)
-abstract class ElaDatabase : RoomDatabase() {
+abstract class ElaDefaultDatabase : RoomDatabase() {
     abstract val suspiciousApps: SuspiciousAppDao
     abstract val messages: MessageDao
+}
+
+@Database(
+    entities = [Block::class],
+    version = 1,
+)
+@TypeConverters(Converters::class)
+abstract class ElaBlockDatabase : RoomDatabase() {
     abstract val blocks: BlockDao
 }
+
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
     @Provides
-    fun provideDatabase(app: Application): ElaDatabase {
+    fun provideDefaultDatabase(app: Application): ElaDefaultDatabase {
         return Room
-            .databaseBuilder(app, ElaDatabase::class.java, "ela_database")
+            .databaseBuilder(app, ElaDefaultDatabase::class.java, DEFAULT_DATABASE_NAME)
             .enableMultiInstanceInvalidation()
             .fallbackToDestructiveMigration()
             .build()
     }
 
     @Provides
-    fun provideSuspiciousAppDao(database: ElaDatabase): SuspiciousAppDao {
+    fun provideBlocksDatabase(app: Application): ElaBlockDatabase {
+        return Room
+            .databaseBuilder(app, ElaBlockDatabase::class.java, BLOCK_DATABASE_NAME)
+            .enableMultiInstanceInvalidation()
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+
+    @Provides
+    fun provideSuspiciousAppDao(database: ElaDefaultDatabase): SuspiciousAppDao {
         return database.suspiciousApps
     }
 
     @Provides
-    fun provideMessageDao(database: ElaDatabase): MessageDao {
+    fun provideMessageDao(database: ElaDefaultDatabase): MessageDao {
         return database.messages
     }
 
     @Provides
-    fun provideBlockDao(database: ElaDatabase): BlockDao {
+    fun provideBlockDao(database: ElaBlockDatabase): BlockDao {
         return database.blocks
     }
 }

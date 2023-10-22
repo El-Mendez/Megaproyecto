@@ -11,6 +11,7 @@ fun SettingsNestedGraph(
     onReturn: (() -> Unit)?,
     settings: ElaSettings,
     update: ((ElaSettings) -> ElaSettings) -> Unit,
+    onExport: () -> Unit,
 ) {
     val navController = rememberNavController()
 
@@ -23,6 +24,7 @@ fun SettingsNestedGraph(
                 onAddDomains = {
                     navController.navigate("whitelist")
                 },
+                onExport = onExport,
             )
         }
 

@@ -10,7 +10,7 @@ import me.mendez.ela.ui.screens.suspicious.components.SuspiciousApps
 
 @Composable
 fun SuspiciousAppsScreen(
-    packagesNames: List<String>,
+    packagesNames: List<String>?,
     onReturn: (() -> Unit),
 ) {
     Scaffold(

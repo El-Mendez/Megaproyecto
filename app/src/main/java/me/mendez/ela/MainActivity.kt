@@ -6,9 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -17,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.ui.theme.ElaTheme
 import dagger.hilt.android.AndroidEntryPoint
+import me.mendez.ela.persistence.database.apps.SuspiciousApp
 import me.mendez.ela.persistence.database.apps.SuspiciousAppDao
 import me.mendez.ela.persistence.database.blocks.BlockDao
 import me.mendez.ela.services.PermissionCheck
@@ -67,8 +66,8 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
-                        val suspiciousApps by suspiciousAppsDao.getAll()
-                            .collectAsState(emptyList())
+                        val suspiciousApps by suspiciousAppsDao.getAmount()
+                            .collectAsState(0)
 
                         val totalBlocks by blocks.amount()
                             .collectAsState(0)
@@ -106,7 +105,7 @@ class MainActivity : ComponentActivity() {
                             onSuspiciousAppClick = {
                                 navController.navigate("app-details")
                             },
-                            suspiciousAppsAmount = suspiciousApps.size,
+                            suspiciousAppsAmount = suspiciousApps,
                             totalBlocks = totalBlocks,
                             dailyBlocks = topDailyBlocks,
                             totalDailyBlocks = dailyBlockAmount,
@@ -155,11 +154,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("app-details") {
-                        val suspiciousApps by suspiciousAppsDao.getAll()
-                            .collectAsState(emptyList())
+                        val suspiciousApps: List<SuspiciousApp>? by suspiciousAppsDao.getAll()
+                            .collectAsState(null)
 
                         SuspiciousAppsScreen(
-                            remember { derivedStateOf { suspiciousApps.map { it.packageName } } }.value,
+                            suspiciousApps?.map { it.packageName },
                             navController::popBackStack
                         )
                     }

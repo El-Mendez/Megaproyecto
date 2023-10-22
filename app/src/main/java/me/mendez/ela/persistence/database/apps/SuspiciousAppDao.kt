@@ -9,6 +9,9 @@ interface SuspiciousAppDao {
     @Query("SELECT * FROM SuspiciousApp")
     fun getAll(): Flow<List<SuspiciousApp>>
 
+    @Query("SELECT COUNT(*) FROM SuspiciousApp")
+    fun getAmount(): Flow<Int>
+
     @Query("SELECT * FROM SuspiciousApp")
     suspend fun all(): List<SuspiciousApp>
 

@@ -54,8 +54,8 @@ fun SuspiciousApps(packagesNames: List<String>?, modifier: Modifier = Modifier) 
         }
     }
 
-    val loading by remember { derivedStateOf { apps == null } }
-    val empty by remember { derivedStateOf { apps != null && apps!!.isEmpty() } }
+    val loading by remember(packagesNames) { derivedStateOf { apps == null } }
+    val empty by remember(packagesNames) { derivedStateOf { apps != null && apps!!.isEmpty() } }
 
     Box(modifier) {
         if (loading) {
@@ -95,7 +95,10 @@ fun SuspiciousApps(packagesNames: List<String>?, modifier: Modifier = Modifier) 
         }
 
         LazyColumn {
-            itemsIndexed(apps ?: emptyList()) { index, app ->
+            itemsIndexed(
+                apps ?: emptyList(),
+                key = { _, app -> app.packageName }
+            ) { index, app ->
                 SuspiciousApp(
                     app,
                     index != 0,

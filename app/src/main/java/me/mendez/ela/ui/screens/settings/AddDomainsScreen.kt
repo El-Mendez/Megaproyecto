@@ -27,7 +27,7 @@ fun AddDomainsScreen(
     var currentDomains: List<String> by remember(settings.whitelist) {
         mutableStateOf(settings.whitelist.toMutableList())
     }
-    val showEmpty by remember {
+    val showEmpty by remember(settings.whitelist) {
         derivedStateOf {
             currentDomains.isEmpty()
         }

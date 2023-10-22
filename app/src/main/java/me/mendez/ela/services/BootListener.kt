@@ -30,10 +30,10 @@ class BootListener : BroadcastReceiver() {
             val state = dataStore.data.first()
 
             if (state.startOnBoot) {
-                Log.d(TAG, "Start VPN because of settings")
+                Log.i(TAG, "Start VPN because of settings")
                 ElaVpnService.sendStart(context)
             } else if (state.vpnRunning || !state.ready) {
-                Log.d(TAG, "reset old state")
+                Log.i(TAG, "Reset VPN status to off")
                 ElaVpnService.showRunning(dataStore, running = false, ready = true)
             }
         }

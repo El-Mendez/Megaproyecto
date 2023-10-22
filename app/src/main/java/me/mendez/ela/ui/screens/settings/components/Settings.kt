@@ -36,6 +36,17 @@ fun Settings(
                 }
             },
         )
+        SettingItem(
+            title = "Proteger Automáticamente",
+            text = "Activar la protección automáticamente encender el dispositivo.",
+            isOn = settings.startOnBoot,
+            isEnabled = settings.ready,
+            onToggle = {
+                update { old ->
+                    old.copy(startOnBoot = it)
+                }
+            },
+        )
         GenericSetting(
             title = "Dominios Permitidos",
             text = if (settings.blockDefault) {

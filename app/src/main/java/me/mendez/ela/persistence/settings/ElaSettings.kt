@@ -86,7 +86,14 @@ suspend fun DataStore<ElaSettings>.nextAction(transform: suspend (ElaSettings) -
         if (old.vpnRunning != updated.vpnRunning) {
             action = if (updated.vpnRunning) ActionNeeded.START else ActionNeeded.STOP
         } else if (updated.vpnRunning && old != updated) {
-            action = ActionNeeded.RESTART
+            val changes = (
+                    old.blockDefault != updated.blockDefault ||
+                            old.whitelist.size != updated.whitelist.size ||
+                            !old.whitelist.containsAll(updated.whitelist)
+                    )
+
+            if (changes)
+                action = ActionNeeded.RESTART
         }
 
         return@updateData updated

@@ -35,7 +35,7 @@ fun DomainBlock(name: String, divider: Boolean, onDelete: () -> Unit, modifier: 
                 Icon(
                     Icons.Filled.Delete,
                     "borrar",
-                    tint = MaterialTheme.colors.primary,
+                    tint = MaterialTheme.colors.secondary,
                 )
             }
         }

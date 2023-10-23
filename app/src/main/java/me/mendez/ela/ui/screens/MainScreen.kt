@@ -10,7 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import me.mendez.ela.R
 import me.mendez.ela.persistence.database.blocks.DailyBlocks
+import me.mendez.ela.ui.theme.onTertiary
+import me.mendez.ela.ui.theme.tertiary
 import java.util.Calendar
 import kotlin.random.Random
 
@@ -36,9 +38,7 @@ fun MainScreen(
     enableVpn: () -> Unit,
     suspiciousAppsAmount: Int,
     onSuspiciousAppClick: () -> Unit,
-    totalBlocks: Int,
     dailyBlocks: List<DailyBlocks>,
-    totalDailyBlocks: Int,
 ) {
     val image = ImageBitmap.imageResource(R.drawable.background_tile)
     val verticalScroll = rememberScrollState()
@@ -71,12 +71,38 @@ fun MainScreen(
     ) {
         TopButtons(onSend, onSettings)
 
-        Score(
+        AnimatedVisibility(!vpnEnabled) {
+            DisabledWarning(enableVpn)
+        }
+
+
+        Row(
             modifier = Modifier
-                .height(180.dp)
-                .fillMaxWidth(),
-            blocks = totalBlocks,
-        )
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+
+            Score(
+                blocks = 42343,
+                modifier = Modifier.weight(0.5f),
+                title = "Bloqueos totales",
+                bottom = "veces",
+                color = MaterialTheme.colors.primary,
+                fontColor = MaterialTheme.colors.onPrimary,
+                icon = R.drawable.round_stacked_line_chart_56,
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Score(
+                blocks = 12343,
+                modifier = Modifier.weight(0.5f),
+                title = "Hoy se bloquearon:",
+                bottom = "dominios",
+                color = MaterialTheme.colors.secondary,
+                fontColor = MaterialTheme.colors.onSecondary,
+                icon = R.drawable.baseline_security_56,
+            )
+        }
+
 
         AnimatedVisibility(suspiciousAppsAmount != 0) {
             SuspiciousAppsWarning(
@@ -85,9 +111,7 @@ fun MainScreen(
             )
         }
 
-        AnimatedVisibility(!vpnEnabled) {
-            DisabledWarning(enableVpn)
-        }
+        Spacer(modifier = Modifier.height(12.dp))
 
         DailyTip(tip, onSend)
 
@@ -95,18 +119,27 @@ fun MainScreen(
         if (dailyBlocks.isEmpty()) {
             EmptyDailyBlocksCard()
         } else {
-            DailyBlocksCard(onDetails, dailyBlocks, totalDailyBlocks)
+            DailyBlocksCard(onDetails, dailyBlocks)
         }
     }
 }
 
 @Composable
-fun Score(blocks: Int, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
+fun Score(
+    blocks: Int,
+    modifier: Modifier = Modifier,
+    title: String,
+    bottom: String? = null,
+    color: Color,
+    fontColor: Color,
+    icon: Int,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(color)
+            .padding(12.dp),
     ) {
-
         var animationStarted by remember { mutableStateOf(false) }
         val animatedScore by animateIntAsState(
             targetValue = if (animationStarted) blocks else 0,
@@ -117,24 +150,28 @@ fun Score(blocks: Int, modifier: Modifier = Modifier) {
             animationStarted = true
         }
 
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colors.background)
-                .padding(25.dp)
-                .clip(RoundedCornerShape(7.dp)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        Text(title, color = fontColor)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                animatedScore.toString(),
-                style = MaterialTheme.typography.h1.copy(
-                    color = MaterialTheme.colors.primary,
-                    fontWeight = FontWeight.Black
+            Column {
+                Text(
+                    text = animatedScore.toString(),
+                    style = MaterialTheme.typography.h1,
+                    modifier = Modifier.wrapContentHeight(Alignment.Bottom),
+                    color = fontColor
                 )
-            )
-            Text(
-                "veces que Ela te ha protegido",
-                style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.onBackground)
+                if (bottom != null)
+                    Text(bottom, color = fontColor)
+            }
+
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = "dudas",
+                tint = fontColor,
             )
         }
     }
@@ -142,8 +179,6 @@ fun Score(blocks: Int, modifier: Modifier = Modifier) {
 
 @Composable
 fun TopButtons(onSendAction: () -> Unit, onSettingsActions: () -> Unit) {
-    var showMenu by remember { mutableStateOf(false) }
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End,
@@ -154,26 +189,16 @@ fun TopButtons(onSendAction: () -> Unit, onSettingsActions: () -> Unit) {
             Icon(
                 painter = painterResource(id = R.drawable.round_send_24),
                 contentDescription = "dudas",
-                tint = MaterialTheme.colors.primary,
+                tint = MaterialTheme.colors.onBackground,
             )
         }
         Box {
-            IconButton(onClick = { showMenu = !showMenu }) {
+            IconButton(onClick = onSettingsActions) {
                 Icon(
-                    Icons.Default.MoreVert,
+                    Icons.Default.Settings,
                     contentDescription = "más opciones",
                     tint = MaterialTheme.colors.onBackground
                 )
-            }
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = {
-                    showMenu = false
-                },
-            ) {
-                DropdownMenuItem(onClick = onSettingsActions) {
-                    Text("Ajustes")
-                }
             }
         }
     }
@@ -256,17 +281,16 @@ fun CardWithTitle(
 }
 
 @Composable
-fun DailyBlocksCard(onClick: () -> Unit, dailyBlocks: List<DailyBlocks>, totalDailyBlocks: Int) {
+fun DailyBlocksCard(onClick: () -> Unit, dailyBlocks: List<DailyBlocks>) {
     val topBlocks = dailyBlocks.slice(0..<minOf(3, dailyBlocks.size))
 
     CardWithTitle(
         top = {
             Column {
                 Text(
-                    text = totalDailyBlocks.toString(),
+                    text = "Dominios bloqueados",
                     style = MaterialTheme.typography.h2.copy(fontWeight = FontWeight.ExtraBold),
                 )
-                Text(text = "tráfico sospechoso bloqueado hoy.", style = MaterialTheme.typography.caption)
             }
         },
         onClick = onClick,
@@ -367,22 +391,32 @@ fun SuspiciousAppsWarning(onClick: () -> Unit, amount: Int) {
     }
 
     Card(
-        backgroundColor = Color.Red,
+        backgroundColor = tertiary,
         modifier = Modifier
             .fillMaxWidth()
             .padding(10.dp)
             .clickable { onClick() },
         elevation = 10.dp,
     ) {
-        Text(
-            text = name,
-            style = MaterialTheme.typography.h2,
-            color = Color.White,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 20.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.round_warning_56),
+                contentDescription = "peligro",
+                tint = onTertiary,
+                modifier = Modifier.padding(start = 24.dp, end = 12.dp)
+            )
+            Text(
+                text = name,
+                style = MaterialTheme.typography.h2,
+                color = onTertiary,
+                textAlign = TextAlign.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp)
+            )
+        }
     }
 }
 

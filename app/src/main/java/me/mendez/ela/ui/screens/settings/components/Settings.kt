@@ -38,7 +38,7 @@ fun Settings(
         )
         SettingItem(
             title = "Proteger Automáticamente",
-            text = "Activar la protección automáticamente encender el dispositivo.",
+            text = "Activa la protección automáticamente al encender el dispositivo.",
             isOn = settings.startOnBoot,
             isEnabled = settings.ready,
             onToggle = {

@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import kotlinx.coroutines.runBlocking
 import me.mendez.ela.chat.ChatApi
 import me.mendez.ela.chat.Message
@@ -12,12 +13,15 @@ import me.mendez.ela.notifications.DailyTipChannel
 import java.util.*
 import javax.inject.Inject
 
+private const val TAG = "ELA_DAILY_TIP"
+
 class DailyTip : BroadcastReceiver() {
     @Inject
     lateinit var chatApi: ChatApi
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null) return
 
+        Log.i(TAG, "creating new daily tip")
         val response = runBlocking {
             try {
                 chatApi.answer(
@@ -59,7 +63,7 @@ class DailyTip : BroadcastReceiver() {
             alarmManager.setInexactRepeating(
                 AlarmManager.RTC_WAKEUP,
                 nextMidday.timeInMillis - System.currentTimeMillis(),
-                AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+                AlarmManager.INTERVAL_DAY,
                 PendingIntent.getBroadcast(
                     context,
                     ALARM_REQUEST_CODE,

@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PopBackTopBar(title: String, onReturn: (() -> Unit)?) {
     TopAppBar(
+        backgroundColor = MaterialTheme.colors.primary,
         title = {
             Text(
                 text = title,

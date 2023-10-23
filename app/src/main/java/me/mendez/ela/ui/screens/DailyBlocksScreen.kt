@@ -90,6 +90,7 @@ fun DailyBlocksList(modifier: Modifier = Modifier, dailyBlocks: List<DailyBlocks
 @Composable
 fun DailyBlocksTopBar(onReturn: (() -> Unit)?) {
     TopAppBar(
+        backgroundColor = MaterialTheme.colors.primary,
         title = {
             Text(
                 text = "Tráfico Web",

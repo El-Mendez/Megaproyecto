@@ -69,14 +69,8 @@ class MainActivity : ComponentActivity() {
                         val suspiciousApps by suspiciousAppsDao.getAmount()
                             .collectAsState(0)
 
-                        val totalBlocks by blocks.amount()
-                            .collectAsState(0)
-
                         val topDailyBlocks by blocks.topDailyBlocks()
                             .collectAsState(emptyList())
-
-                        val dailyBlockAmount by blocks.dailyBlockAmount()
-                            .collectAsState(0)
 
                         val elaSettings by elaSettingsStore.data.collectAsState(
                             initial = ElaSettings(
@@ -106,9 +100,7 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate("app-details")
                             },
                             suspiciousAppsAmount = suspiciousApps,
-                            totalBlocks = totalBlocks,
                             dailyBlocks = topDailyBlocks,
-                            totalDailyBlocks = dailyBlockAmount,
                         )
                     }
 

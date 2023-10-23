@@ -206,35 +206,57 @@ fun TopButtons(onSendAction: () -> Unit, onSettingsActions: () -> Unit) {
 
 @Composable
 fun DailyTip(content: String, onClick: () -> Unit) {
-    Card(
-        backgroundColor = MaterialTheme.colors.primary,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(10.dp)
             .clickable {
                 onClick()
             },
-        elevation = 5.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colors.primary)
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .padding(20.dp),
-            horizontalAlignment = Alignment.Start
+                .clip(RoundedCornerShape(12.dp))
+                .height(IntrinsicSize.Min)
+                .background(MaterialTheme.colors.secondary)
         ) {
-            Text(
-                "Consejo del día:",
-                style = MaterialTheme.typography.caption.copy(
-                    color = MaterialTheme.colors.onPrimary,
-                    fontWeight = FontWeight.ExtraBold
-                ),
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = content,
-                style = MaterialTheme.typography.h2.copy(color = MaterialTheme.colors.onPrimary),
-                textAlign = TextAlign.Center
-            )
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp, 0.dp, 0.dp, 12.dp))
+                    .background(MaterialTheme.colors.primary)
+                    .fillMaxHeight()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    "Consejo",
+                    style = MaterialTheme.typography.h2.copy(
+                        color = MaterialTheme.colors.onPrimary,
+                        fontWeight = FontWeight.ExtraBold
+                    ),
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    "Diario",
+                    style = MaterialTheme.typography.h2.copy(
+                        color = MaterialTheme.colors.onPrimary,
+                        fontWeight = FontWeight.ExtraBold
+                    ),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Box(
+                modifier = Modifier.padding(12.dp).fillMaxHeight(),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.h3.copy(color = MaterialTheme.colors.onSecondary),
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
     }
@@ -397,6 +419,7 @@ fun SuspiciousAppsWarning(onClick: () -> Unit, amount: Int) {
             .padding(10.dp)
             .clickable { onClick() },
         elevation = 10.dp,
+        shape = RoundedCornerShape(12.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

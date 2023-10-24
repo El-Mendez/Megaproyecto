@@ -95,7 +95,7 @@ class PermissionCheck : BroadcastReceiver() {
                 classifier.predict(
                     it.packageName,
                     it.requestedPermissions,
-                    0.8f
+                    0.90f
                 ) == MaliciousAppClassifier.Result.MALICIOUS
             }
 

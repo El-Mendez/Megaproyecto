@@ -72,6 +72,9 @@ class MainActivity : ComponentActivity() {
                         val topDailyBlocks by blocks.topDailyBlocks()
                             .collectAsState(emptyList())
 
+                        val blockCount by blocks.amount().collectAsState(0)
+                        val totalDailyBlocks by blocks.dailyBlockAmount().collectAsState(0)
+
                         val elaSettings by elaSettingsStore.data.collectAsState(
                             initial = ElaSettings(
                                 vpnRunning = true,
@@ -101,6 +104,8 @@ class MainActivity : ComponentActivity() {
                             },
                             suspiciousAppsAmount = suspiciousApps,
                             dailyBlocks = topDailyBlocks,
+                            totalDailyBlocks = totalDailyBlocks,
+                            totalBlocks = blockCount
                         )
                     }
 

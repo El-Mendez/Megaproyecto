@@ -74,7 +74,7 @@ fun InputBar(onSubmit: (String) -> Unit, submitEnabled: Boolean) {
                         Icon(
                             painter = painterResource(id = R.drawable.round_send_24),
                             contentDescription = "Enviar",
-                            tint = MaterialTheme.colors.primary,
+                            tint = MaterialTheme.colors.onBackground,
                         )
                     }
                 }

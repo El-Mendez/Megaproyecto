@@ -38,7 +38,9 @@ fun MainScreen(
     enableVpn: () -> Unit,
     suspiciousAppsAmount: Int,
     onSuspiciousAppClick: () -> Unit,
+    totalBlocks: Int,
     dailyBlocks: List<DailyBlocks>,
+    totalDailyBlocks: Int,
 ) {
     val image = ImageBitmap.imageResource(R.drawable.background_tile)
     val verticalScroll = rememberScrollState()
@@ -83,20 +85,20 @@ fun MainScreen(
         ) {
 
             Score(
-                blocks = 42343,
+                blocks = totalBlocks,
                 modifier = Modifier.weight(0.5f),
-                title = "Bloqueos totales",
-                bottom = "veces",
+                title = "Bloqueos totales:",
+                bottom = if (totalBlocks == 1) "dominio" else "dominios",
                 color = MaterialTheme.colors.primary,
                 fontColor = MaterialTheme.colors.onPrimary,
                 icon = R.drawable.round_stacked_line_chart_56,
             )
             Spacer(modifier = Modifier.width(12.dp))
             Score(
-                blocks = 12343,
+                blocks = totalDailyBlocks,
                 modifier = Modifier.weight(0.5f),
                 title = "Hoy se bloquearon:",
-                bottom = "dominios",
+                bottom = if (totalBlocks == 1) "dominio" else "dominios",
                 color = MaterialTheme.colors.secondary,
                 fontColor = MaterialTheme.colors.onSecondary,
                 icon = R.drawable.baseline_security_56,

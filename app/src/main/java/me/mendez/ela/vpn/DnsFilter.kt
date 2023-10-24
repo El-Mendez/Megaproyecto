@@ -33,7 +33,7 @@ class DnsFilter(
     private var blockDao: BlockDao,
 ) {
     private val domainClassifier = MaliciousDomainClassifier(service)
-    private val upstreamDnsServer = Inet4Address.getByName("1.1.1.2")
+    private val upstreamDnsServer = Inet4Address.getByName("8.8.8.8")
     private val cache = ConcurrentHashMap<String, FilterStatus>()
 
     init {
@@ -51,6 +51,7 @@ class DnsFilter(
         if (!elaSettings.blockDefault) {
             rawResponse = ByteBufferPool.poll()
             if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
+                Log.e(TAG, "error $domain (forwarding udp packet)")
                 ByteBufferPool.put(rawResponse)
                 return
             }
@@ -63,6 +64,7 @@ class DnsFilter(
                 if (rawResponse == null) {
                     rawResponse = ByteBufferPool.poll()
                     if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
+                        Log.e(TAG, "error $domain (forwarding udp packet)")
                         ByteBufferPool.put(rawResponse)
                         return
                     }
@@ -95,6 +97,7 @@ class DnsFilter(
         if (rawResponse == null) {
             rawResponse = ByteBufferPool.poll()
             if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
+                Log.e(TAG, "error $domain (forwarding udp packet)")
                 ByteBufferPool.put(rawResponse)
                 return
             }
@@ -183,6 +186,7 @@ class DnsFilter(
     private fun forwardAndWaitResponse(rawRequest: ByteArray, rawResponse: ByteArray): Boolean {
         val socket = try {
             val socket = DatagramSocket()
+            socket.soTimeout = 5_000
             service.protect(socket)
             socket
         } catch (_: Exception) {
@@ -196,7 +200,7 @@ class DnsFilter(
             socket.receive(DatagramPacket(rawResponse, rawResponse.size))
             true
         } catch (_: Exception) {
-            Log.w(TAG, "could not send or receive udp packet")
+            Log.d(TAG, "could not send or receive udp packet")
             socket.receive(DatagramPacket(rawResponse, rawResponse.size))
             false
         }
@@ -275,21 +279,30 @@ class DnsFilter(
 
             val ipPacket: IpPacket = run {
                 val packet = IpSelector.newPacket(bytes, 0, bytes.size)
-                if (packet !is IpPacket) return null
+                if (packet !is IpPacket) {
+                    Log.w(TAG, "expected IP packet: $packet")
+                    return null
+                }
                 packet
             }
 
             // ipPacket -> UdpPacket
             val udpPacket: UdpPacket = run {
                 val packet = ipPacket.payload
-                if (packet !is UdpPacket) return null
+                if (packet !is UdpPacket) {
+                    Log.w(TAG, "expected UDP packet: $ipPacket \npayload was $packet")
+                    return null
+                }
                 packet
             }
 
             // UdpPacket -> DnsPacket
             val dnsPacket: DnsPacket = run {
                 val packet = udpPacket.payload
-                if (packet !is DnsPacket) return null
+                if (packet !is DnsPacket) {
+                    Log.w(TAG, "expected UDP packet: $packet")
+                    return null
+                }
                 packet
             }
 

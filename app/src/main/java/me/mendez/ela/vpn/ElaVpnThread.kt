@@ -152,9 +152,9 @@ class ElaVpnThread(private val service: ElaVpnService, private val blockDao: Blo
     private fun startVpnInterface(builder: VpnService.Builder): ParcelFileDescriptor? {
         Log.d(TAG, "starting vpn interface")
         return builder
-            .addRoute("192.168.255.0", 29)
-            .addAddress("192.168.255.1", 29)
-            .addDnsServer("192.168.255.2")
+            .addRoute("192.168.200.0", 29)
+            .addAddress("192.168.200.1", 29)
+            .addDnsServer("192.168.200.2")
             .addDisallowedApplication(BuildConfig.APPLICATION_ID)
             .setBlocking(true)
             .setSession("ElaVPN")

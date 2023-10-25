@@ -20,7 +20,11 @@ object DailyTipChannel : BaseNotificationChannel<DailyTipChannel.NotificationCre
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.logo_24)
                 .setColor(Color.WHITE)
-                .setContentText(tip)
+                .setContentText("Sabías qué...?")
+                .setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .bigText(tip)
+                )
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .build()
         }

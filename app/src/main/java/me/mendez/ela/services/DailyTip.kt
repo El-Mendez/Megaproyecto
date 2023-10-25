@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.runBlocking
 import me.mendez.ela.chat.ChatApi
 import me.mendez.ela.chat.Message
@@ -15,6 +16,7 @@ import javax.inject.Inject
 
 private const val TAG = "ELA_DAILY_TIP"
 
+@AndroidEntryPoint
 class DailyTip : BroadcastReceiver() {
     @Inject
     lateinit var chatApi: ChatApi
@@ -28,11 +30,15 @@ class DailyTip : BroadcastReceiver() {
                     listOf(Message("dame un dato interesante de ciberseguridad", true, Date()))
                 )
             } catch (e: Exception) {
+                Log.e(TAG, e.toString())
                 return@runBlocking emptyList()
             }
         }
 
-        if (response.isEmpty()) return
+        if (response.isEmpty()) {
+            Log.i(TAG, "could not get ela chat api response")
+            return
+        }
 
         DailyTipChannel.notify(
             context,
@@ -43,32 +49,33 @@ class DailyTip : BroadcastReceiver() {
     }
 
     companion object {
-        private const val ALARM_REQUEST_CODE = 1
+        private const val ALARM_REQUEST_CODE = 10
 
         fun scheduleNotifications(context: Context) {
             val alarmManager = context.getSystemService(AlarmManager::class.java)
 
             val nextMidday = Calendar.getInstance().apply {
-                if (get(Calendar.HOUR_OF_DAY) >= 12) {
-                    add(Calendar.DAY_OF_MONTH, 1)
-                }
-
-                set(Calendar.HOUR_OF_DAY, 12)
+                timeInMillis = System.currentTimeMillis()
+                set(Calendar.HOUR_OF_DAY, 8)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
             }
+
+            Log.i(
+                TAG,
+                "scheduling alarm at ${(nextMidday.timeInMillis - System.currentTimeMillis()) / (1000 * 60)} minutes"
+            )
 
 
             alarmManager.setInexactRepeating(
                 AlarmManager.RTC_WAKEUP,
                 nextMidday.timeInMillis - System.currentTimeMillis(),
-                AlarmManager.INTERVAL_DAY,
+                AlarmManager.INTERVAL_HALF_DAY,
                 PendingIntent.getBroadcast(
                     context,
                     ALARM_REQUEST_CODE,
                     Intent(context, DailyTip::class.java),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
                 ),
             )
         }

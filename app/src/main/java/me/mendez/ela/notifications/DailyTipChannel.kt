@@ -9,7 +9,7 @@ import me.mendez.ela.R
 
 object DailyTipChannel : BaseNotificationChannel<DailyTipChannel.NotificationCreator>() {
     override val CHANNEL_ID = "daily_tip"
-    override val IMPORTANCE = NotificationManager.IMPORTANCE_LOW
+    override val IMPORTANCE = NotificationManager.IMPORTANCE_HIGH
     override val NAME = "Consejo Diario de Ciberseguridad"
     val TIP_ID = 4
 
@@ -20,7 +20,8 @@ object DailyTipChannel : BaseNotificationChannel<DailyTipChannel.NotificationCre
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.logo_24)
                 .setColor(Color.WHITE)
-                .setContentText("Sabías qué...?")
+                .setContentTitle("¿Sabías qué...?")
+                .setContentText(tip)
                 .setStyle(
                     NotificationCompat.BigTextStyle()
                         .bigText(tip)

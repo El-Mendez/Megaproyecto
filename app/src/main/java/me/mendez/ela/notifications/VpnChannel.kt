@@ -9,7 +9,7 @@ import me.mendez.ela.R
 
 object VpnChannel : BaseNotificationChannel<VpnChannel.NotificationCreator>() {
     override val CHANNEL_ID = "vpn_traffic"
-    override val IMPORTANCE = NotificationManager.IMPORTANCE_LOW
+    override val IMPORTANCE = NotificationManager.IMPORTANCE_HIGH
     override val NAME = "VPN"
     const val FOREGROUND_ID = 1
     const val ERROR_ID = 2

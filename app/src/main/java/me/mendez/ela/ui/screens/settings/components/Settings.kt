@@ -27,7 +27,7 @@ fun Settings(
         )
         SettingItem(
             title = "Bloquear conexiones",
-            text = "Automáticamente bloquear el tráfico tráfico sospechoso.",
+            text = "Automáticamente bloquear el tráfico sospechoso.",
             isOn = settings.blockDefault,
             isEnabled = settings.ready,
             onToggle = {

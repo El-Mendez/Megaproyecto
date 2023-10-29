@@ -46,6 +46,7 @@ class BubbleActivity : ComponentActivity() {
         updateParams(intent, savedInstanceState)
 
         if (domain == null || conversation == null) {
+            Log.e(TAG, "domain or conversation was null. domain: $domain, conversation: $conversation")
             finish()
             return
         }
@@ -91,20 +92,29 @@ class BubbleActivity : ComponentActivity() {
     }
 
     private fun updateParams(intent: Intent?, savedInstanceState: Bundle?) {
-        var newConversation: Long = -2L
+        var newConversation: Long? = null
         var newDomain: String? = null
 
+        val intentString = if (intent == null) {
+            "null"
+        } else {
+            intent.extras?.keySet()?.joinToString(", ", "{", "}") { key ->
+                "$key=${intent.extras?.get(key).toString()}"
+            }
+
+        }
+        Log.d(TAG, "intent: $intentString \nbundle: $savedInstanceState")
         if (intent != null) {
             newDomain = intent.getStringExtra(BUBBLE_DOMAIN_EXTRA_PARAM)
-            newConversation = intent.getLongExtra(BUBBLE_CONVERSATION_PARAM, -2L)
+            newConversation = intent.getStringExtra(BUBBLE_CONVERSATION_PARAM)?.toLongOrNull()
         }
 
         if ((newDomain == null || newConversation == -2L) && savedInstanceState != null) {
             newDomain = savedInstanceState.getString(BUBBLE_DOMAIN_EXTRA_PARAM)
-            newConversation = savedInstanceState.getLong(BUBBLE_CONVERSATION_PARAM, -2L)
+            newConversation = savedInstanceState.getString(BUBBLE_CONVERSATION_PARAM)?.toLongOrNull()
         }
 
-        if (newDomain != null && newConversation != -2L) {
+        if (newDomain != null && newConversation != null && newConversation != -2L) {
             domain = newDomain
             conversation = newConversation
         }

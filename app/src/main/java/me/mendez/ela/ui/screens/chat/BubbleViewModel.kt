@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import me.mendez.ela.chat.Message
-import me.mendez.ela.persistence.database.chats.MessageDao
+import me.mendez.ela.persistence.database.blocks.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.chat.ChatApi
 import me.mendez.ela.chat.Sender

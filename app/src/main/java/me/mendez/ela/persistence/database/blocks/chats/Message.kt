@@ -1,4 +1,4 @@
-package me.mendez.ela.persistence.database.chats
+package me.mendez.ela.persistence.database.blocks.chats
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

@@ -110,9 +110,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("chat") {
+                        val messages = chatViewModel.messages.collectAsState(emptyList())
+
                         ChatScreen(
                             "Ela",
-                            chatViewModel.messages,
+                            messages.value,
                             chatViewModel.calculatingResponse.value,
                             onSubmit = chatViewModel::sendMessage,
                             onReturn = navController::popBackStack

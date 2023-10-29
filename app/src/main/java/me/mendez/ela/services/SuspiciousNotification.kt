@@ -11,7 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import me.mendez.ela.chat.Message
 import me.mendez.ela.notifications.SuspiciousTrafficChannel
-import me.mendez.ela.persistence.database.chats.MessageDao
+import me.mendez.ela.persistence.database.blocks.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.chat.ChatApi
 import me.mendez.ela.chat.Sender
@@ -52,7 +52,7 @@ class SuspiciousNotification : BroadcastReceiver() {
         val actionString = intent.getStringExtra("action") ?: return
         val conversation = intent.getStringExtra("conversation")?.toLongOrNull() ?: return
 
-        Log.d(TAG, "new action: $actionString")
+        Log.d(TAG, "new action: $actionString. domain: $domain. conversation: $conversation")
 
         if (actionString == "CREATE_CHAT") {
             initializeChat(domain, conversation, context, intent)

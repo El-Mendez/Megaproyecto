@@ -387,7 +387,7 @@ fun EmptyDailyBlocksCard() {
 @Composable
 fun DisabledWarning(onClick: () -> Unit) {
     Card(
-        backgroundColor = MaterialTheme.colors.secondary,
+        backgroundColor = tertiary,
         modifier = Modifier
             .fillMaxWidth()
             .padding(10.dp)
@@ -397,7 +397,7 @@ fun DisabledWarning(onClick: () -> Unit) {
         Text(
             text = "No estás protegido por Ela",
             style = MaterialTheme.typography.h2,
-            color = MaterialTheme.colors.onSecondary,
+            color = onTertiary,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()

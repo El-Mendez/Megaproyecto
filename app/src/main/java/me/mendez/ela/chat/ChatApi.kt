@@ -19,6 +19,9 @@ import me.mendez.ela.BuildConfig
 import me.mendez.ela.chat.dto.ChatGPTRequest
 import me.mendez.ela.chat.dto.ChatGPTResponse
 import me.mendez.ela.chat.dto.wrapForTransfer
+import me.mendez.ela.ml.MaliciousDomainClassifier
+import me.mendez.ela.ml.prompt
+import java.util.*
 import javax.inject.Singleton
 
 private const val TAG = "ELA_CHAT_API"
@@ -26,18 +29,31 @@ private const val TAG = "ELA_CHAT_API"
 class ChatApi(
     private val client: HttpClient,
 ) {
-    suspend fun answer(chat: List<Message>): List<Message> {
+    suspend fun dailyTip(): List<Message>? {
+        return answer(
+            listOf(Message("dame un dato interesante de ciberseguridad", Sender.USER, Date()))
+        )
+    }
+
+    suspend fun explainMalware(type: MaliciousDomainClassifier.Result): List<Message>? {
+        return answer(
+            listOf(Message(type.prompt(), Sender.USER, Date()))
+        )
+    }
+
+    suspend fun answer(chat: List<Message>): List<Message>? {
         return try {
             Log.i(TAG, "trying to send message")
-            getNewChatMessage(chat)
+            getResponse(chat).ifEmpty { null }
         } catch (e: Exception) {
             Log.e(TAG, "could not send message $e")
-            emptyList()
+            null
         }
     }
 
-    private suspend fun getNewChatMessage(oldMessages: List<Message>): List<Message> {
+    private suspend fun getResponse(oldMessages: List<Message>): List<Message> {
         val body = oldMessages.wrapForTransfer()
+        if (body.isEmpty()) return emptyList()
 
         val request = ChatGPTRequest(
             model = MODEL,

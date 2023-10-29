@@ -13,7 +13,7 @@ interface BlockDao {
     fun amount(): Flow<Int>
 
     @Insert
-    suspend fun insert(block: Block)
+    suspend fun insert(block: Block): Long
 
     @Query("SELECT domain, COUNT(*) AS amount FROM block WHERE :start < date AND date < :end GROUP BY domain order by amount desc")
     fun blocksInTimeRange(start: Long, end: Long): Flow<List<DailyBlocks>>

@@ -13,9 +13,10 @@ import androidx.core.graphics.drawable.IconCompat
 import me.mendez.ela.BubbleActivity
 import me.mendez.ela.MainActivity
 import me.mendez.ela.R
+import me.mendez.ela.chat.Message
+import me.mendez.ela.chat.Sender
 import me.mendez.ela.services.SuspiciousCommand
 import me.mendez.ela.services.broadcast
-import java.util.Date
 
 object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChannel.NotificationCreator>() {
     override val CHANNEL_ID = "suspicious_traffic"
@@ -31,7 +32,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
         .setIcon(
             IconCompat.createWithResource(
                 context,
-                R.drawable.logo_24
+                R.drawable.ic_launcher_foreground
             )
         )
         .build()
@@ -54,7 +55,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
             .setActivity(ComponentName(context, MainActivity::class.java))
             .setShortLabel(domain)
             .setIcon(
-                IconCompat.createWithResource(context, R.drawable.logo_24)
+                IconCompat.createWithResource(context, R.drawable.ic_launcher_foreground)
             )
             .setLongLived(true)
             .setCategories(setOf("me.mendez.ela.bubbles.category.CHAT_BLOCK"))
@@ -67,7 +68,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
     }
 
-    fun addMessageToChat(context: Context, domain: String, message: String, user: Boolean) {
+    fun addMessagesToNotification(context: Context, domain: String, conversation: Long, messages: List<Message>) {
         val ela = ela(context)
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = notificationManager
@@ -85,25 +86,28 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
         oldMessages.forEach {
             newMessages.addMessage(it.text, it.timestamp, it.person)
         }
-        newMessages.addMessage(message, Date().time, if (user) you else ela)
+        messages.forEach {
+            newMessages.addMessage(it.content, it.date.time, if (it.user == Sender.USER) you else ela)
+        }
 
         notify(context, domain.hashCode()) {
             newSuspiciousTraffic(
                 domain,
+                conversation,
                 newMessages,
             )
         }
     }
 
     class NotificationCreator(val context: Context) {
-        private fun replyOnNotificationAction(domain: String): NotificationCompat.Action {
+        private fun replyOnNotificationAction(domain: String, conversation: Long): NotificationCompat.Action {
             val remoteInput = RemoteInput
                 .Builder(REMOTE_INPUT_TAG)
                 .setLabel("Escribe aquí...")
                 .build()
 
             val replyPendingIntent = SuspiciousCommand.SUBMIT_FROM_NOTIFICATION
-                .broadcast(context, domain)
+                .broadcast(context, domain, conversation)
 
             return NotificationCompat.Action
                 .Builder(R.drawable.round_send_24, "Responder", replyPendingIntent)
@@ -111,9 +115,12 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                 .build()
         }
 
-        private fun addToWhitelistFromNotificationAction(domain: String): NotificationCompat.Action {
+        private fun addToWhitelistFromNotificationAction(
+            domain: String,
+            conversation: Long
+        ): NotificationCompat.Action {
             val allowPendingIntent = SuspiciousCommand.ADD_TO_WHITELIST_FROM_NOTIFICATION
-                .broadcast(context, domain)
+                .broadcast(context, domain, conversation)
 
             return NotificationCompat.Action
                 .Builder(
@@ -131,28 +138,32 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
 
         fun newSuspiciousTraffic(
             domain: String,
-            message: String
+            conversation: Long,
+            messages: List<Message>
         ): Notification {
-            val messages = newChatConversation(domain)
-            messages.addMessage(message, Date().time, ela(context))
-            return newSuspiciousTraffic(domain, messages)
+            val messageStyle = newChatConversation(domain)
+            messages.forEach {
+                messageStyle.addMessage(it.content, it.date.time, if (it.user == Sender.USER) you else ela(context))
+            }
+            return newSuspiciousTraffic(domain, conversation, messageStyle)
         }
 
         fun newSuspiciousTraffic(
             domain: String,
-            messages: NotificationCompat.MessagingStyle,
+            conversation: Long,
+            messageStyle: NotificationCompat.MessagingStyle,
         ): Notification {
             addShortcut(domain, context)
 
             val bubbleMetadata = NotificationCompat.BubbleMetadata
                 .Builder(
-                    BubbleActivity.createLaunchIntent(context, domain),
-                    IconCompat.createWithResource(context, R.drawable.logo_24)
+                    BubbleActivity.createLaunchIntent(context, domain, conversation),
+                    IconCompat.createWithResource(context, R.drawable.ic_launcher_foreground)
                 ).setDesiredHeight(600)
                 .setAutoExpandBubble(true)
                 .setDeleteIntent(
                     SuspiciousCommand.DISMISS_BUBBLE
-                        .broadcast(context, domain)
+                        .broadcast(context, domain, conversation)
                 )
                 .build()
 
@@ -163,13 +174,13 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
                 .setShortcutId(domain)
                 .setLocusId(LocusIdCompat(domain))
                 .addPerson(ela(context))
-                .addAction(replyOnNotificationAction(domain))
-                .addAction(addToWhitelistFromNotificationAction(domain))
+                .addAction(replyOnNotificationAction(domain, conversation))
+                .addAction(addToWhitelistFromNotificationAction(domain, conversation))
                 .setShowWhen(true)
-                .setStyle(messages)
+                .setStyle(messageStyle)
                 .setDeleteIntent(
                     SuspiciousCommand.DISMISS_NOTIFICATION
-                        .broadcast(context, domain)
+                        .broadcast(context, domain, conversation)
                 )
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .build()

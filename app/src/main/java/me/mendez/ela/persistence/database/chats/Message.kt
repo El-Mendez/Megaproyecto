@@ -2,15 +2,16 @@ package me.mendez.ela.persistence.database.chats
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import me.mendez.ela.chat.Sender
 import java.util.Date
 
 
 @Entity
 data class Message(
-    val user: Boolean,
+    val conversation: Long,
+    val user: Sender,
     val date: Date,
     val content: String,
-    val domain: String,
     @PrimaryKey
     val id: Int? = null,
 )

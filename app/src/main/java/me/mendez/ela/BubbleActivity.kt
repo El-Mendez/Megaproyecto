@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -31,29 +32,26 @@ class BubbleActivity : ComponentActivity() {
     lateinit var factory: BubbleViewModel.Factory
 
     private var domain: String? = null
+    private var conversation: Long? = null
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        val newDomain = intent?.getStringExtra(BUBBLE_DOMAIN_EXTRA_PARAM)
-        if (newDomain != null) domain = newDomain
+        Log.d(TAG, "on new intent: ${intent?.extras}")
+        updateParams(intent, null)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        var newDomain = intent.getStringExtra(BUBBLE_DOMAIN_EXTRA_PARAM)
-        if (newDomain != null) domain = newDomain
+        updateParams(intent, savedInstanceState)
 
-        newDomain = savedInstanceState?.getString(BUBBLE_DOMAIN_EXTRA_PARAM)
-        if (newDomain != null) domain = newDomain
-
-        if (domain == null) {
+        if (domain == null || conversation == null) {
             finish()
             return
         }
 
         val viewModel: BubbleViewModel by viewModels {
-            BubbleViewModel.provideBubbleFactory(factory, domain!!)
+            BubbleViewModel.provideBubbleFactory(factory, domain!!, conversation!!)
         }
 
         setContent {
@@ -75,18 +73,40 @@ class BubbleActivity : ComponentActivity() {
     }
 
     companion object {
-        const val BUBBLE_DOMAIN_EXTRA_PARAM = "domain"
+        private const val BUBBLE_DOMAIN_EXTRA_PARAM = "domain"
+        private const val BUBBLE_CONVERSATION_PARAM = "conversation"
 
-        fun createLaunchIntent(context: Context, domain: String): PendingIntent {
+        fun createLaunchIntent(context: Context, domain: String, conversation: Long): PendingIntent {
             return PendingIntent.getActivity(
                 context,
                 ":openBubbleActivity:$domain:".hashCode(),
                 Intent(context, BubbleActivity::class.java).apply {
                     setAction(Intent.ACTION_VIEW)
                     putExtra(BUBBLE_DOMAIN_EXTRA_PARAM, domain)
+                    putExtra(BUBBLE_CONVERSATION_PARAM, conversation.toString())
                 },
                 PendingIntent.FLAG_MUTABLE,
             )
+        }
+    }
+
+    private fun updateParams(intent: Intent?, savedInstanceState: Bundle?) {
+        var newConversation: Long = -2L
+        var newDomain: String? = null
+
+        if (intent != null) {
+            newDomain = intent.getStringExtra(BUBBLE_DOMAIN_EXTRA_PARAM)
+            newConversation = intent.getLongExtra(BUBBLE_CONVERSATION_PARAM, -2L)
+        }
+
+        if ((newDomain == null || newConversation == -2L) && savedInstanceState != null) {
+            newDomain = savedInstanceState.getString(BUBBLE_DOMAIN_EXTRA_PARAM)
+            newConversation = savedInstanceState.getLong(BUBBLE_CONVERSATION_PARAM, -2L)
+        }
+
+        if (newDomain != null && newConversation != -2L) {
+            domain = newDomain
+            conversation = newConversation
         }
     }
 }

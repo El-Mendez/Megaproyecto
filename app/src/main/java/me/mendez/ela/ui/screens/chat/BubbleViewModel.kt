@@ -15,17 +15,20 @@ import me.mendez.ela.chat.Message
 import me.mendez.ela.persistence.database.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.chat.ChatApi
+import me.mendez.ela.chat.Sender
 
 
 class BubbleViewModel @AssistedInject constructor(
-    val chatApi: ChatApi,
-    val messagesDao: MessageDao,
+    private val chatApi: ChatApi,
+    private val messagesDao: MessageDao,
     var elaSettingsStore: DataStore<ElaSettings>,
     @Assisted
     val domain: String,
+    @Assisted
+    val conversation: Long,
 ) : ViewModel() {
     val messages = messagesDao
-        .getMessages(domain)
+        .getMessages(conversation)
 
     val ignoreAddToWhitelist = mutableStateOf(false)
     val inWhitelist = elaSettingsStore
@@ -40,21 +43,22 @@ class BubbleViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val messages = messages.first()
 
-            val userQuestion = Message(content, true)
-            messagesDao.addMessage(domain, userQuestion)
+            // add question to database
+            val userQuestion = Message(content, Sender.USER)
+            messagesDao.addMessage(conversation, userQuestion)
 
             calculatingResponse.value = true
 
+            // query question
             val latestConversation = messages
                 .toMutableList()
                 .apply { add(userQuestion) }
 
-            try {
-                val elaResponse = chatApi.answer(latestConversation).last()
-                messagesDao.addMessage(domain, elaResponse)
-            } catch (e: Exception) {
-                messagesDao.addMessage(domain, Message("parece que no tienes conexión a internet", false))
-            }
+            var response = chatApi.answer(latestConversation)
+            if (response.isNullOrEmpty())
+                response = Message.noInternetMessage()
+
+            messagesDao.addMessages(conversation, response)
 
             calculatingResponse.value = false
         }
@@ -74,14 +78,14 @@ class BubbleViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(domain: String): BubbleViewModel
+        fun create(domain: String, conversation: Long): BubbleViewModel
     }
 
     companion object {
-        fun provideBubbleFactory(factory: Factory, domain: String): ViewModelProvider.Factory {
+        fun provideBubbleFactory(factory: Factory, domain: String, conversation: Long): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return factory.create(domain) as T
+                    return factory.create(domain, conversation) as T
                 }
             }
         }

@@ -2,6 +2,7 @@ package me.mendez.ela.chat.dto
 
 import kotlinx.serialization.Serializable
 import me.mendez.ela.chat.Message
+import me.mendez.ela.chat.Sender
 import java.util.*
 
 @Serializable
@@ -18,7 +19,7 @@ internal data class ChatGPTResponse(
         return choices.map {
             Message(
                 content = it.message.content,
-                userCreated = it.message.role != "assistant",
+                user = if (it.message.role == "assistant") Sender.ELA else Sender.USER,
                 date = Date()
             )
         }

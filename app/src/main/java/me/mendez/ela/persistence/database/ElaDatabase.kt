@@ -21,7 +21,7 @@ const val BLOCK_DATABASE_NAME = "ela_blocks.sqlite"
 
 @Database(
     entities = [SuspiciousApp::class, Message::class],
-    version = 1,
+    version = 2,
 )
 @TypeConverters(Converters::class)
 abstract class ElaDefaultDatabase : RoomDatabase() {

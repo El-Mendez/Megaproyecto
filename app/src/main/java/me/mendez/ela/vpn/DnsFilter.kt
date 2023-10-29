@@ -120,10 +120,10 @@ class DnsFilter(
             } else {
                 writeBack(ipPacket, udpPacket, rawResponse.array(), output)
             }
-            SuspiciousNotification.createChat(service, domain, linkType)
-            runBlocking {
+            val conversation = runBlocking {
                 blockDao.insert(Block(domain, Date()))
             }
+            SuspiciousNotification.createChat(service, domain, conversation, linkType)
         }
 
         ByteBufferPool.put(rawResponse)

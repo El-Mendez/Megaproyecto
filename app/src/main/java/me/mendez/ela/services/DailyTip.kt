@@ -9,7 +9,6 @@ import android.util.Log
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.runBlocking
 import me.mendez.ela.chat.ChatApi
-import me.mendez.ela.chat.Message
 import me.mendez.ela.notifications.DailyTipChannel
 import java.util.*
 import javax.inject.Inject
@@ -24,18 +23,9 @@ class DailyTip : BroadcastReceiver() {
         if (context == null) return
 
         Log.i(TAG, "creating new daily tip")
-        val response = runBlocking {
-            try {
-                chatApi.answer(
-                    listOf(Message("dame un dato interesante de ciberseguridad", true, Date()))
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, e.toString())
-                return@runBlocking emptyList()
-            }
-        }
+        val response = runBlocking { chatApi.dailyTip() }
 
-        if (response.isEmpty()) {
+        if (response.isNullOrEmpty()) {
             Log.i(TAG, "could not get ela chat api response")
             return
         }
@@ -44,7 +34,7 @@ class DailyTip : BroadcastReceiver() {
             context,
             DailyTipChannel.TIP_ID,
         ) {
-            newDailyTip(response.first().content)
+            newDailyTip(response.map { it.content })
         }
     }
 
@@ -65,7 +55,6 @@ class DailyTip : BroadcastReceiver() {
                 TAG,
                 "scheduling alarm at ${(nextMidday.timeInMillis - System.currentTimeMillis()) / (1000 * 60)} minutes"
             )
-
 
             alarmManager.setInexactRepeating(
                 AlarmManager.RTC_WAKEUP,

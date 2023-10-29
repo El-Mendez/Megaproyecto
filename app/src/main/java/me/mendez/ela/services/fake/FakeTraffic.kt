@@ -24,6 +24,7 @@ class FakeTraffic : TileService() {
         SuspiciousNotification.createChat(
             this,
             domain,
+            -1,
             MaliciousDomainClassifier.Result.BENIGN
         )
 

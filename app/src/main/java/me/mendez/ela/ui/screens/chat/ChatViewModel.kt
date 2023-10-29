@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import me.mendez.ela.chat.Message
 import me.mendez.ela.chat.ChatApi
+import me.mendez.ela.chat.Sender
 import java.util.*
 import javax.inject.Inject
 
@@ -26,7 +27,7 @@ class ChatViewModel @Inject constructor(
         messages.add(
             Message(
                 content,
-                userCreated = true,
+                user = Sender.USER,
                 date = Date()
             )
         )
@@ -36,12 +37,11 @@ class ChatViewModel @Inject constructor(
             calculatingResponse.value = true
             val res = chatApi.answer(messages)
 
-            if (res.isEmpty()) {
+            if (res.isNullOrEmpty()) {
                 messages.add(
                     Message(
                         "Vaya, parece que no tienes conexión a internet",
-                        false,
-                        Date(),
+                        Sender.SYSTEM,
                     )
                 )
             } else {

@@ -14,10 +14,9 @@ import me.mendez.ela.notifications.SuspiciousTrafficChannel
 import me.mendez.ela.persistence.database.chats.MessageDao
 import me.mendez.ela.persistence.settings.ElaSettings
 import me.mendez.ela.chat.ChatApi
+import me.mendez.ela.chat.Sender
 import me.mendez.ela.ml.MaliciousDomainClassifier
-import me.mendez.ela.ml.prompt
 import me.mendez.ela.vpn.ElaVpnService
-import java.util.*
 import javax.inject.Inject
 
 private const val TAG = "ELA_NOTIFICATION_SERVICE"
@@ -29,8 +28,8 @@ enum class SuspiciousCommand {
     DISMISS_NOTIFICATION, DISMISS_BUBBLE,
 }
 
-fun SuspiciousCommand.broadcast(context: Context, domain: String): PendingIntent {
-    return SuspiciousNotification.broadcast(context, domain, this)
+fun SuspiciousCommand.broadcast(context: Context, domain: String, conversation: Long): PendingIntent {
+    return SuspiciousNotification.broadcast(context, domain, conversation, this)
 }
 
 
@@ -39,7 +38,7 @@ class SuspiciousNotification : BroadcastReceiver() {
     @Inject
     lateinit var elaSettingsStore: DataStore<ElaSettings>
 
-    var chatApi: ChatApi? = null
+    private var chatApi: ChatApi? = null
 
     @Inject
     lateinit var messageDao: MessageDao
@@ -51,16 +50,18 @@ class SuspiciousNotification : BroadcastReceiver() {
 
         val domain = intent.getStringExtra("domain") ?: return
         val actionString = intent.getStringExtra("action") ?: return
+        val conversation = intent.getStringExtra("conversation")?.toLongOrNull() ?: return
+
         Log.d(TAG, "new action: $actionString")
 
         if (actionString == "CREATE_CHAT") {
-            initializeChat(domain, context, intent)
+            initializeChat(domain, conversation, context, intent)
             return
         }
 
         val action = SuspiciousCommand.valueOf(actionString)
         when (action) {
-            SuspiciousCommand.SUBMIT_FROM_NOTIFICATION -> messageFromNotification(domain, context, intent)
+            SuspiciousCommand.SUBMIT_FROM_NOTIFICATION -> messageFromNotification(domain, conversation, context, intent)
 
             SuspiciousCommand.ADD_TO_WHITELIST_FROM_NOTIFICATION -> addToWhitelist(domain, context)
 
@@ -69,64 +70,64 @@ class SuspiciousNotification : BroadcastReceiver() {
         }
     }
 
-    private fun initializeChat(domain: String, context: Context, intent: Intent) {
+    private fun initializeChat(domain: String, conversation: Long, context: Context, intent: Intent) {
         val reasonString = intent.getStringExtra("reason") ?: return
         val reason = MaliciousDomainClassifier.Result.valueOf(reasonString)
 
         CoroutineScope(Dispatchers.IO + supervisor).launch {
-            val response = chatApi!!.answer(
-                listOf(Message(reason.prompt(), true, Date()))
-            ).firstOrNull() ?: Message(
-                "Vaya, parece que no tienes internet. No puedo darte tips de ciberseguridad hasta que vuelvas a conectarte",
-                false,
-                Date()
-            )
-            messageDao.addMessage(domain, response)
+            var response = chatApi!!.explainMalware(reason)
+
+            if (response.isNullOrEmpty()) {
+                response = Message.noInternetMessage()
+            }
+
+            messageDao.addMessages(conversation, response)
 
             SuspiciousTrafficChannel.notify(context, domain.hashCode()) {
-                newSuspiciousTraffic(domain, response.content)
+                newSuspiciousTraffic(domain, conversation, response)
             }
         }
     }
 
-    private fun messageFromNotification(domain: String, context: Context, intent: Intent) {
+    private fun messageFromNotification(domain: String, conversation: Long, context: Context, intent: Intent) {
         val inputtedText = SuspiciousTrafficChannel.recoverSubmittedText(intent) ?: return
-        val question = Message(inputtedText, true)
+        val question = Message(inputtedText, Sender.USER)
 
-        Log.i(TAG, "got chat ($domain) response: ($question)")
+        Log.i(TAG, "got chat ($domain) response: ($inputtedText) at conversation $conversation")
         SuspiciousTrafficChannel
-            .addMessageToChat(
+            .addMessagesToNotification(
                 context,
                 domain,
-                inputtedText,
-                true,
+                conversation,
+                listOf(question),
             )
 
         CoroutineScope(Dispatchers.IO + supervisor).launch {
             val messages = messageDao
-                .getMessages(domain)
+                .getMessages(conversation)
                 .first()
 
-            messageDao.addMessage(domain, question)
+            messageDao.addMessage(conversation, question)
 
-            val response = try {
-                val conversation = messages
-                    .toMutableList()
-                    .apply { add(question) }
-                val response = chatApi!!.answer(conversation)
-                messageDao.addMessage(domain, response.last())
-                response.last()
-            } catch (e: Exception) {
-                Message("parece que no tienes internet", false)
-            }
+            // get the response
+            val chat = messages
+                .toMutableList()
+                .apply { add(question) }
+
+            var response = chatApi!!.answer(chat)
+            if (response.isNullOrEmpty())
+                response = Message.noInternetMessage()
+
+            // add the response
+            messageDao.addMessages(conversation, response)
 
             Log.d(TAG, "Updating notification for chat $domain")
             SuspiciousTrafficChannel
-                .addMessageToChat(
+                .addMessagesToNotification(
                     context,
                     domain,
-                    response.content,
-                    false
+                    conversation,
+                    response,
                 )
         }
     }
@@ -153,24 +154,21 @@ class SuspiciousNotification : BroadcastReceiver() {
             context,
             domain.hashCode()
         )
-
-        CoroutineScope(Dispatchers.IO + supervisor).launch {
-            messageDao.deleteChat(domain)
-        }
     }
 
     companion object {
-        fun createChat(context: Context, domain: String, reason: MaliciousDomainClassifier.Result) {
+        fun createChat(context: Context, domain: String, conversation: Long, reason: MaliciousDomainClassifier.Result) {
             val intent = Intent(context, SuspiciousNotification::class.java).apply {
                 putExtra("action", "CREATE_CHAT")
                 putExtra("domain", domain)
+                putExtra("conversation", conversation.toString())
                 putExtra("reason", reason.toString())
             }
 
             context.sendBroadcast(intent)
         }
 
-        fun broadcast(context: Context, domain: String, command: SuspiciousCommand): PendingIntent {
+        fun broadcast(context: Context, domain: String, conversation: Long, command: SuspiciousCommand): PendingIntent {
             return PendingIntent
                 .getBroadcast(
                     context,
@@ -178,6 +176,7 @@ class SuspiciousNotification : BroadcastReceiver() {
                     Intent(context, SuspiciousNotification::class.java).apply {
                         putExtra("action", command.toString())
                         putExtra("domain", domain)
+                        putExtra("conversation", conversation.toString())
                     },
                     getFlags(command),
                 )

@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import me.mendez.ela.chat.Message
+import me.mendez.ela.chat.Sender
 import java.text.DateFormat
 
 @Composable
@@ -32,7 +33,7 @@ fun MessageBubble(content: Message) {
         }
     }
 
-    if (content.userCreated) {
+    if (content.user == Sender.USER) {
         arrangement = Arrangement.End
         backgroundColor = MaterialTheme.colors.secondary
         fontColor = MaterialTheme.colors.onSecondary
@@ -53,7 +54,7 @@ fun MessageBubble(content: Message) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 5.dp),
     ) {
-        if (!content.userCreated) {
+        if (content.user != Sender.USER) {
             Box(
                 modifier = Modifier.background(
                     color = backgroundColor,
@@ -92,7 +93,7 @@ fun MessageBubble(content: Message) {
                 }
             }
         }
-        if (content.userCreated) {
+        if (content.user == Sender.USER) {
             Box(
                 modifier = Modifier.background(
                     color = backgroundColor,

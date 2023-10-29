@@ -1,10 +1,7 @@
 package me.mendez.ela.persistence.database
 
 import android.app.Application
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import androidx.room.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,6 +30,9 @@ abstract class ElaDefaultDatabase : RoomDatabase() {
 @Database(
     entities = [Block::class, Message::class, ChatMessage::class],
     version = 2,
+    autoMigrations = [
+        AutoMigration(1, 2)
+    ]
 )
 @TypeConverters(Converters::class)
 abstract class ElaBlockDatabase : RoomDatabase() {

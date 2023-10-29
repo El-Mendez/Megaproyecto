@@ -23,6 +23,10 @@ android {
             useSupportLibrary true
         }
 
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
+
         Properties properties = new Properties()
         properties.load(project.rootProject.file("local.properties").newDataInputStream())
         buildConfigField("String", "GPT_API_KEY", "\"${properties.getProperty("GPT_API_KEY")}\"")

@@ -3,7 +3,7 @@
     <application>
 
         <service android:name=".services.fake.FakeTraffic"
-                 android:label="FAKE TRAFFIC"
+                 android:label="Trigger Traffic"
                  android:icon="@drawable/logo_24"
                  android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
                  android:exported="true">
@@ -14,7 +14,19 @@
         </service>
 
         <service android:name=".services.fake.FakeAppInstall"
-                 android:label="FAKE APP INSTALL"
+                 android:label="Trigger App Install"
+                 android:icon="@drawable/logo_24"
+                 android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+                 android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+
+        <service android:name=".services.fake.FakeDailyTip"
+                 android:label="Trigger Daily Tip"
                  android:icon="@drawable/logo_24"
                  android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
                  android:exported="true">

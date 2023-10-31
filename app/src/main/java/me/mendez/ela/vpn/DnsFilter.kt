@@ -45,14 +45,12 @@ class DnsFilter(
         val domain = dnsPacket.header.questions.first().qName.name
 
         if (dnsPacket.header.isResponse) return
-
         var rawResponse: ByteBuffer? = null
 
         if (!elaSettings.blockDefault) {
-            rawResponse = ByteBufferPool.poll()
-            if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
+            rawResponse = lazyWaitForAnswer(dnsPacket.rawData, rawResponse, domain)
+            if (rawResponse == null) {
                 Log.e(TAG, "error $domain (forwarding udp packet)")
-                ByteBufferPool.put(rawResponse)
                 return
             }
         }
@@ -61,27 +59,21 @@ class DnsFilter(
         when (checkCache(dnsPacket)) {
             true -> {
                 Log.i(TAG, "allow $domain (cache)")
+                rawResponse = lazyWaitForAnswer(dnsPacket.rawData, rawResponse, domain)
                 if (rawResponse == null) {
-                    rawResponse = ByteBufferPool.poll()
-                    if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
-                        Log.e(TAG, "error $domain (forwarding udp packet)")
-                        ByteBufferPool.put(rawResponse)
-                        return
-                    }
+                    Log.e(TAG, "error $domain (forwarding udp packet)")
+                } else {
+                    accept(ipPacket, udpPacket, rawResponse, output, domain)
                 }
-
-                writeBack(ipPacket, udpPacket, rawResponse.array(), output)
-                ByteBufferPool.put(rawResponse)
                 return
             }
 
             false -> {
                 Log.i(TAG, "block $domain (cache)")
-                if (rawResponse == null) {
-                    writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
+                if (rawResponse == null) { // if blocking by default
+                    deny(ipPacket, udpPacket, dnsPacket, output)
                 } else {
-                    writeBack(ipPacket, udpPacket, rawResponse.array(), output)
-                    ByteBufferPool.put(rawResponse)
+                    accept(ipPacket, udpPacket, rawResponse, output, domain)
                 }
 
                 runBlocking {
@@ -94,39 +86,34 @@ class DnsFilter(
         }
 
         // not cached, manually check the packet
+        rawResponse = lazyWaitForAnswer(dnsPacket.rawData, rawResponse, domain)
         if (rawResponse == null) {
-            rawResponse = ByteBufferPool.poll()
-            if (!forwardAndWaitResponse(dnsPacket.rawData, rawResponse.array())) {
-                Log.e(TAG, "error $domain (forwarding udp packet)")
-                ByteBufferPool.put(rawResponse)
-                return
-            }
+            Log.e(TAG, "error $domain (forwarding udp packet)")
+            return
         }
 
-        val response = DnsPacket.newPacket(rawResponse.array(), 0, rawResponse.array().size)
+        val dnsResponse = DnsPacket.newPacket(rawResponse.array(), 0, rawResponse.array().size)
         val whoisData = getWhoisData(domain)
 
-        val linkType = domainClassifier.predict(domain, response, whoisData)
+        val linkType = domainClassifier.predict(domain, dnsResponse, whoisData)
 
         if (linkType.isBenign()) {
             putInCache(domain, true)
             Log.i(TAG, "allow $domain")
-            writeBack(ipPacket, udpPacket, rawResponse.array(), output)
+            accept(ipPacket, udpPacket, rawResponse, output, domain)
         } else {
             putInCache(domain, false)
             Log.i(TAG, "blocked $domain ($linkType)")
             if (elaSettings.blockDefault) {
-                writeBack(ipPacket, udpPacket, notFoundAnswer(dnsPacket), output)
+                deny(ipPacket, udpPacket, dnsPacket, output, rawResponse)
             } else {
-                writeBack(ipPacket, udpPacket, rawResponse.array(), output)
+                accept(ipPacket, udpPacket, rawResponse, output, domain)
             }
             val conversation = runBlocking {
                 blockDao.insert(Block(domain, Date()))
             }
             SuspiciousNotification.createChat(service, domain, conversation, linkType)
         }
-
-        ByteBufferPool.put(rawResponse)
     }
 
     private fun putInCache(domain: String, allowed: Boolean) {
@@ -183,7 +170,7 @@ class DnsFilter(
         return dnsRequest.toWire()
     }
 
-    private fun forwardAndWaitResponse(rawRequest: ByteArray, rawResponse: ByteArray): Boolean {
+    private fun waitForAnswer(rawRequest: ByteArray, rawResponse: ByteArray, domain: String): Boolean {
         val socket = try {
             val socket = DatagramSocket()
             socket.soTimeout = 5_000
@@ -194,14 +181,14 @@ class DnsFilter(
         }
 
         val sent = try {
-            Log.v(TAG, "sending udp packet")
+            Log.v(TAG, "sending udp packet ($domain)")
             socket.send(DatagramPacket(rawRequest, 0, rawRequest.size, upstreamDnsServer, 53))
-            Log.v(TAG, "waiting for udp response")
+            Log.v(TAG, "waiting for udp response $domain")
             socket.receive(DatagramPacket(rawResponse, rawResponse.size))
+            Log.v(TAG, "got udp response $domain")
             true
         } catch (_: Exception) {
-            Log.d(TAG, "could not send or receive udp packet")
-            socket.receive(DatagramPacket(rawResponse, rawResponse.size))
+            Log.d(TAG, "could not send or receive udp packet $domain")
             false
         }
 
@@ -212,6 +199,52 @@ class DnsFilter(
             Log.w(TAG, "could not cleanup socket")
             sent
         }
+    }
+
+    private fun lazyWaitForAnswer(rawRequest: ByteArray, oldAnswer: ByteBuffer?, domain: String): ByteBuffer? {
+        if (oldAnswer != null)
+            return oldAnswer
+
+        val response = ByteBufferPool.poll()
+        return if (waitForAnswer(rawRequest, response.array(), domain)) {
+            response
+        } else {
+            ByteBufferPool.put(response)
+            null
+        }
+    }
+
+    private fun accept(
+        ipPacket: IpPacket,
+        udpPacket: UdpPacket,
+        udpContents: ByteBuffer,
+        output: FileOutputStream,
+        domain: String,
+    ) {
+        val packet = DnsPacket.newPacket(
+            udpContents.array(),
+            0,
+            udpContents.array().size
+        )
+        Log.v(
+            TAG,
+            "accepting package for domain $domain. $packet"
+        )
+        writeBack(ipPacket, udpPacket, packet.rawData, output)
+        ByteBufferPool.put(udpContents)
+    }
+
+    private fun deny(
+        ipPacket: IpPacket,
+        udpPacket: UdpPacket,
+        dnsRequest: DnsPacket,
+        output: FileOutputStream,
+        buffer: ByteBuffer? = null,
+    ) {
+        writeBack(ipPacket, udpPacket, notFoundAnswer(dnsRequest), output)
+
+        if (buffer != null)
+            ByteBufferPool.put(buffer)
     }
 
     private fun writeBack(

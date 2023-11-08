@@ -1,8 +1,7 @@
-package me.mendez.ela.services.fake
+package me.mendez.ela.services
 
 import android.service.quicksettings.TileService
 import android.util.Log
-import me.mendez.ela.services.PermissionCheck
 
 private const val TAG = "ELA_FAKE_APP_INSTALL"
 

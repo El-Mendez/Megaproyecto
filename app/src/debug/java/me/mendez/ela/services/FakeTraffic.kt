@@ -1,9 +1,8 @@
-package me.mendez.ela.services.fake
+package me.mendez.ela.services
 
 import android.service.quicksettings.TileService
 import android.util.Log
 import me.mendez.ela.ml.MaliciousDomainClassifier
-import me.mendez.ela.services.SuspiciousNotification
 
 private const val TAG = "ELA_FAKE_TRAFFIC"
 

@@ -1,9 +1,8 @@
-package me.mendez.ela.services.fake
+package me.mendez.ela.services
 
 import android.content.Intent
 import android.service.quicksettings.TileService
 import android.util.Log
-import me.mendez.ela.services.DailyTip
 
 private const val TAG = "ELA_FAKE_DAILY_TIP"
 

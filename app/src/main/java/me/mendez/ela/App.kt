@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.os.Build
 import dagger.hilt.android.HiltAndroidApp
 import me.mendez.ela.notifications.*
+import me.mendez.ela.notifications.groups.SuspiciousGroup
 import me.mendez.ela.services.DailyTip
 import me.mendez.ela.services.PermissionCheck
 

@@ -1,4 +1,4 @@
-package me.mendez.ela.notifications
+package me.mendez.ela.notifications.groups
 
 object SuspiciousGroup : BaseNotificationGroup() {
     override val NAME = "Actividad Sospechosa"

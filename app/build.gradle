@@ -32,6 +32,13 @@ android {
         buildConfigField("String", "GPT_API_KEY", "\"${properties.getProperty("GPT_API_KEY")}\"")
     }
 
+    flavorDimensions = ["explanation"]
+    productFlavors {
+        explain {
+        }
+        noExplain {
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false

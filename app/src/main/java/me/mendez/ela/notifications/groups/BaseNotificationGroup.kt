@@ -1,10 +1,11 @@
-package me.mendez.ela.notifications
+package me.mendez.ela.notifications.groups
 
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import me.mendez.ela.notifications.BaseNotificationChannel
 
 abstract class BaseNotificationGroup {
     protected abstract val NAME: String

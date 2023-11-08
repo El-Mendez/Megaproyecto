@@ -10,7 +10,7 @@ import me.mendez.ela.R
 object SuspiciousAppChannel : BaseNotificationChannel<SuspiciousAppChannel.NotificationCreator>() {
     override val CHANNEL_ID = "suspicious_apps"
     override val IMPORTANCE = NotificationManager.IMPORTANCE_HIGH
-    override val NAME = "Aplicaciones sospechoso"
+    override val NAME = "Aplicaciones sospechosas"
     val SUSPICIOUS_APP_ID = 3
 
     override fun createNotification(context: Context): NotificationCreator = NotificationCreator(context)

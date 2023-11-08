@@ -29,6 +29,7 @@ object SuspiciousTrafficChannel : BaseNotificationChannel<SuspiciousTrafficChann
 
     private fun ela(context: Context): Person = Person.Builder()
         .setName("Ela")
+        .setImportant(true)
         .setIcon(
             IconCompat.createWithResource(
                 context,

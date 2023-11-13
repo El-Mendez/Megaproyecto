@@ -42,6 +42,17 @@ class DailyTip : BroadcastReceiver() {
         private const val ALARM_REQUEST_CODE = 10
 
         fun scheduleNotifications(context: Context) {
+            if (PendingIntent.getBroadcast(
+                    context,
+                    ALARM_REQUEST_CODE,
+                    Intent(context, DailyTip::class.java),
+                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE,
+                ) != null
+            ) {
+                Log.i(TAG, "alarm already scheduled, no need to recreate it")
+                return
+            }
+
             val alarmManager = context.getSystemService(AlarmManager::class.java)
 
             val nextMidday = Calendar.getInstance().apply {
